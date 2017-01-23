@@ -26,7 +26,7 @@ import shapeless._
 /**
   * Created by 张志豪 on 2017/1/22.
   */
-object StochasticGradientDescent extends App {
+object MiniBatchGradientDescent extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val CLASSES: Int = 10
 
