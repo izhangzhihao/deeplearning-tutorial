@@ -10,3 +10,4 @@ With the help of DeepLearning.scala, regular programmers are able to build compl
 - [getting start](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/GettingStarted.md)
 - [softmax](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/SoftmaxLinearClassifier.md)
 - [mini-batch gradient descent](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/MiniBatchGradientDescent.md)
+- [how to debug](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/Debug.md)
