@@ -5,7 +5,7 @@ Deep learning is a great tool that helps us efficiently summarize inherent patte
 
 
 **Input**:
- Arithmetic progression as:
+ Arithmetic progression(AP) as:
 ``` val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray``` 
 
 
@@ -49,7 +49,7 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 fork := true
 ```
 
-Note that this example does not run on Scala 2.12 because `INDArray` does not support Scala 2.12. Make sure there is not a setting like `scalaVersion := "2.12.1"` in your `build.sbt`.
+Note that this example does not run on Scala 2.12 because [nd4j](http://nd4j.org/) does not support Scala 2.12. Make sure there is not a setting like `scalaVersion := "2.12.1"` in your `build.sbt`.
 
 See [Scaladex](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala) for settings of other build tools.
 
@@ -58,7 +58,7 @@ See [Scaladex](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala) 
 DeepLearning.scala is also a language that we can use to create complex neural networks.
 
 In the following sections, you will learn:
- * how to define type of a neural network
+ * how to define types for a neural network
  * how to use a neural network as a predictor
  * how to create a neural network
  * how to train a neural network
@@ -164,7 +164,7 @@ The first array is the input data used to train the neural network, and the seco
 val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
 val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
 
-for (i <- 0 until 2000) {
+for (iteration <- 0 until 2000) {
   lossFunction.train(input :: expectedOutput :: HNil)
 }
 
@@ -222,7 +222,7 @@ object GettingStarted extends App {
   val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
   val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
 
-  for (i <- 0 until 2000) {
+  for (iteration <- 0 until 2000) {
     lossFunction.train(input :: expectedOutput :: HNil)
   }
 
