@@ -47,7 +47,11 @@ object ReadCIFAR10ToNDArray {
     * @return input :: expectedOutput :: HNil
     */
   def readFromResource(fileName: String, count: Int): INDArray :: INDArray :: HNil = {
+    //if you are using IDE
     val inputStream = getClass.getResourceAsStream(fileName)
+
+    //if you are using jupyter notebook,please use this
+    //val inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + fileName)
     try {
       val bytes = Array.range(0, 3073 * count).map(_.toByte)
       inputStream.read(bytes)
@@ -140,8 +144,8 @@ object ReadCIFAR10ToNDArray {
 4.分离和处理图像和标签数据
 
 ```scala
-  private val train_data = trainNDArray.head
-  private val test_data = testNDArray.head
+  val train_data = trainNDArray.head
+  val test_data = testNDArray.head
 
   val train_expect_result = trainNDArray.tail.head
   val test_expect_result = testNDArray.tail.head
@@ -203,7 +207,7 @@ object ReadCIFAR10ToNDArray {
 10.使用训练后的神经网络判断测试数据的标签
 
 ```scala
-  private val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(test_data)
   println(s"result: $result") //输出判断结果
 ```
 
@@ -236,7 +240,7 @@ object ReadCIFAR10ToNDArray {
 ```scala
   var right = 0
 
-  private val shape = result.shape()
+  val shape = result.shape()
   for (row <- 0 until shape(0)) {
     val rowItem = result.getRow(row)
     val index = findMaxItemIndex(rowItem)

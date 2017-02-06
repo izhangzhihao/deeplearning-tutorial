@@ -47,7 +47,11 @@ object ReadCIFAR10ToNDArray {
     * @return input :: expectedOutput :: HNil
     */
   def readFromResource(fileName: String, count: Int): INDArray :: INDArray :: HNil = {
+    //if you are using IDE
     val inputStream = getClass.getResourceAsStream(fileName)
+
+    //if you are using jupyter notebook,please use this
+    //val inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + fileName)
     try {
       val bytes = Array.range(0, 3073 * count).map(_.toByte)
       inputStream.read(bytes)
@@ -81,12 +85,11 @@ object ReadCIFAR10ToNDArray {
     */
   def normalizePixel(pixel: Double): Double = {
     (if (pixel < 0) {
-      pixel + 256
-    } else {
-      pixel
-    }) / 256
+       pixel + 256
+     } else {
+       pixel
+     }) / 256
   }
-
 
   /**
     * 随机获取count个train数据

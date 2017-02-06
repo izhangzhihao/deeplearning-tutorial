@@ -1,3 +1,4 @@
 project/target
 src/main/resources
 target
+notebook/.ipynb_checkpoints

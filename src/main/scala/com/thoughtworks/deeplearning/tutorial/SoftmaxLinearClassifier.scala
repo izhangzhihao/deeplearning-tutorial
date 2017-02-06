@@ -1,6 +1,5 @@
 package com.thoughtworks.deeplearning.tutorial
 
-
 import com.thoughtworks.deeplearning
 import org.nd4j.linalg.api.ndarray.INDArray
 import com.thoughtworks.deeplearning.DifferentiableHList._
@@ -8,7 +7,11 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.{DifferentiableHList, DifferentiableINDArray, Layer}
+import com.thoughtworks.deeplearning.{
+  DifferentiableHList,
+  DifferentiableINDArray,
+  Layer
+}
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Lift.Layers.Identity
 import com.thoughtworks.deeplearning.Lift._
@@ -26,7 +29,7 @@ import shapeless._
 /**
   * Created by 张志豪 on 2017/1/22.
   */
-object SoftmaxLinearClassifier extends App{
+object SoftmaxLinearClassifier extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val CLASSES: Int = 10
 
@@ -56,8 +59,8 @@ object SoftmaxLinearClassifier extends App{
     p
   }
 
-  private val train_data = trainNDArray.head
-  private val test_data = testNDArray.head
+  val train_data = trainNDArray.head
+  val test_data = testNDArray.head
 
   val train_expect_result = trainNDArray.tail.head
   val test_expect_result = testNDArray.tail.head
@@ -95,7 +98,7 @@ object SoftmaxLinearClassifier extends App{
     println(s"loss : $loss")
   }
 
-  private val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(test_data)
   println(s"result: $result") //输出判断结果
 
   /**
@@ -120,7 +123,7 @@ object SoftmaxLinearClassifier extends App{
 
   var right = 0
 
-  private val shape = result.shape()
+  val shape = result.shape()
   for (row <- 0 until shape(0)) {
     val rowItem = result.getRow(row)
     val index = findMaxItemIndex(rowItem)
