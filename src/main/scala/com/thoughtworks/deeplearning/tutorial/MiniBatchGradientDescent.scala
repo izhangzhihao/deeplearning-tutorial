@@ -7,7 +7,11 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.{DifferentiableHList, DifferentiableINDArray, Layer}
+import com.thoughtworks.deeplearning.{
+  DifferentiableHList,
+  DifferentiableINDArray,
+  Layer
+}
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Lift.Layers.Identity
 import com.thoughtworks.deeplearning.Lift._
@@ -22,7 +26,6 @@ import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
 import shapeless._
 
-
 /**
   * Created by 张志豪 on 2017/1/22.
   */
@@ -32,7 +35,9 @@ object MiniBatchGradientDescent extends App {
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
-    ReadCIFAR10ToNDArray.readFromResource("/cifar-10-batches-bin/test_batch.bin", 100)
+    ReadCIFAR10ToNDArray.readFromResource(
+      "/cifar-10-batches-bin/test_batch.bin",
+      100)
 
   /**
     * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
@@ -58,25 +63,27 @@ object MiniBatchGradientDescent extends App {
 
   val test_p = makeVectorized(test_expect_result)
 
-  def softmax(implicit scores: From[INDArray] ## T): To[INDArray] ## T = {
+  def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
-  def createMyNeuralNetwork(implicit input: From[INDArray] ## T): To[INDArray] ## T = {
+  def createMyNeuralNetwork(
+      implicit input: From[INDArray]##T): To[INDArray]##T = {
     val initialValueOfWeight = Nd4j.randn(3072, CLASSES) * 0.001
-    val weight: To[INDArray] ## T = initialValueOfWeight.toWeight
-    val result: To[INDArray] ## T = input dot weight
+    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
+    val result: To[INDArray]##T = input dot weight
     softmax.compose(result) //对结果调用softmax方法，压缩结果值在0到1之间方便处理
   }
 
-  val myNeuralNetwork: FromTo[INDArray, INDArray] ## T = createMyNeuralNetwork
+  val myNeuralNetwork: FromTo[INDArray, INDArray]##T = createMyNeuralNetwork
 
   implicit def optimizer: Optimizer = new LearningRate {
     def currentLearningRate() = 0.00001
   }
 
-  def lossFunction(implicit pair: From[INDArray :: INDArray :: HNil] ## T): To[Double] ## T = {
+  def lossFunction(
+      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)
@@ -86,7 +93,8 @@ object MiniBatchGradientDescent extends App {
 
   for (_ <- 0 until 2000) {
     val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
-    val loss = lossFunction.train(trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
+    val loss = lossFunction.train(
+      trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
     println(s"loss : $loss")
   }
 

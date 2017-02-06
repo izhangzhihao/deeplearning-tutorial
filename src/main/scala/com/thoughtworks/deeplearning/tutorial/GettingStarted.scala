@@ -18,15 +18,16 @@ import shapeless._
   */
 object GettingStarted extends App {
 
-  val myNeuralNetwork: (INDArray <=> INDArray) ##T = createMyNeuralNetwork
+  val myNeuralNetwork: (INDArray <=> INDArray)##T = createMyNeuralNetwork
 
-  val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
+  val input: INDArray =
+    Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
   val predictionResult: INDArray = myNeuralNetwork.predict(input)
 
-
-  def createMyNeuralNetwork(implicit input: From[INDArray] ##T): To[INDArray] ##T = {
+  def createMyNeuralNetwork(
+      implicit input: From[INDArray]##T): To[INDArray]##T = {
     val initialValueOfWeight = Nd4j.randn(3, 1)
-    val weight: To[INDArray] ##T = initialValueOfWeight.toWeight
+    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
     input dot weight
   }
 
@@ -34,7 +35,8 @@ object GettingStarted extends App {
     def currentLearningRate() = 0.001
   }
 
-  def lossFunction(implicit pair: From[INDArray :: INDArray :: HNil] ##T): To[Double] ##T = {
+  def lossFunction(
+      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     abs(myNeuralNetwork.compose(input) - expectedOutput).sum

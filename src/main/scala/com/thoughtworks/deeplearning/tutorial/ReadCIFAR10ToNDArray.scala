@@ -23,7 +23,8 @@ object ReadCIFAR10ToNDArray {
       //inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
 
       //if you are using jupyter notebook,please use this
-      inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+      inputStream = new FileInputStream(sys
+        .env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
     } yield readFromInputStream(inputStream)
   }
 
@@ -50,7 +51,8 @@ object ReadCIFAR10ToNDArray {
     * @param count    要读取多少个图片和其标签
     * @return input :: expectedOutput :: HNil
     */
-  def readFromResource(fileName: String, count: Int): INDArray :: INDArray :: HNil = {
+  def readFromResource(fileName: String,
+                       count: Int): INDArray :: INDArray :: HNil = {
     //if you are using IDE
     val inputStream = getClass.getResourceAsStream(fileName)
 
@@ -113,7 +115,8 @@ object ReadCIFAR10ToNDArray {
     val pixels: Seq[Seq[Double]] = for (index <- 0 until count)
       yield {
         for (pixelItem <- 1 until 3073)
-          yield normalizePixel(bytes(indexList(index) * 3073 + pixelItem).toDouble)
+          yield
+            normalizePixel(bytes(indexList(index) * 3073 + pixelItem).toDouble)
       }
 
     val labelsNDArray = labels.toNDArray.reshape(count, 1)

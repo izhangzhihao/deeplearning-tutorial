@@ -35,11 +35,15 @@ object SoftmaxLinearClassifier extends App {
 
   //加载train数据,我们读取1000条数据作为训练数据
   val trainNDArray =
-    ReadCIFAR10ToNDArray.readFromResource("/cifar-10-batches-bin/data_batch_1.bin", 1000)
+    ReadCIFAR10ToNDArray.readFromResource(
+      "/cifar-10-batches-bin/data_batch_1.bin",
+      1000)
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
-    ReadCIFAR10ToNDArray.readFromResource("/cifar-10-batches-bin/test_batch.bin", 100)
+    ReadCIFAR10ToNDArray.readFromResource(
+      "/cifar-10-batches-bin/test_batch.bin",
+      100)
 
   /**
     * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
@@ -68,24 +72,26 @@ object SoftmaxLinearClassifier extends App {
   val p = makeVectorized(train_expect_result)
   val test_p = makeVectorized(test_expect_result)
 
-  def softmax(implicit scores: From[INDArray] ##T): To[INDArray] ##T = {
+  def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
-  def createMyNeuralNetwork(implicit input: From[INDArray] ##T): To[INDArray] ##T = {
+  def createMyNeuralNetwork(
+      implicit input: From[INDArray]##T): To[INDArray]##T = {
     val initialValueOfWeight = Nd4j.randn(3072, CLASSES) * 0.001
-    val weight: To[INDArray] ##T = initialValueOfWeight.toWeight
-    val result: To[INDArray] ##T = input dot weight
+    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
+    val result: To[INDArray]##T = input dot weight
     softmax.compose(result) //对结果调用softmax方法，压缩结果值在0到1之间方便处理
   }
-  val myNeuralNetwork: FromTo[INDArray, INDArray] ##T = createMyNeuralNetwork
+  val myNeuralNetwork: FromTo[INDArray, INDArray]##T = createMyNeuralNetwork
 
   implicit def optimizer: Optimizer = new LearningRate {
     def currentLearningRate() = 0.00001
   }
 
-  def lossFunction(implicit pair: From[INDArray :: INDArray :: HNil] ##T): To[Double] ##T = {
+  def lossFunction(
+      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)
