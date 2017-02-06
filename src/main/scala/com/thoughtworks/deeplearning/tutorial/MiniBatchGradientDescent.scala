@@ -52,7 +52,7 @@ object MiniBatchGradientDescent extends App {
     p
   }
 
-  private val test_data = testNDArray.head
+  val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
 
@@ -90,7 +90,7 @@ object MiniBatchGradientDescent extends App {
     println(s"loss : $loss")
   }
 
-  private val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(test_data)
   println(s"result: $result") //输出判断结果
 
   /**
@@ -116,7 +116,7 @@ object MiniBatchGradientDescent extends App {
 
   var right = 0
 
-  private val shape = result.shape()
+  val shape = result.shape()
   for (row <- 0 until shape(0)) {
     val rowItem = result.getRow(row)
     val index = findMaxItemIndex(rowItem)

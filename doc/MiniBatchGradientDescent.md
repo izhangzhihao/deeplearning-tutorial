@@ -20,7 +20,11 @@ object ReadCIFAR10ToNDArray {
   lazy val fileBytesSeq: IndexedSeq[Array[Byte]] = {
     for {
       fileIndex <- 1 to 5
-      inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+      //if you are using IDE
+      //inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+    
+      //if you are using jupyter notebook,please use this
+      inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
     } yield readFromInputStream(inputStream)
   }
 
@@ -133,7 +137,7 @@ object ReadCIFAR10ToNDArray {
 4.分离和处理图像和标签数据，注意：这里和与SoftmaxLinearClassifier中不同
 
 ```scala
-  private val test_data = testNDArray.head
+  val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
   
@@ -194,7 +198,7 @@ object ReadCIFAR10ToNDArray {
 10.使用训练后的神经网络判断测试数据的标签
 
 ```scala
-  private val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(test_data)
   println(s"result: $result") //输出判断结果
 ```
 
@@ -227,7 +231,7 @@ object ReadCIFAR10ToNDArray {
 ```scala
   var right = 0
 
-  private val shape = result.shape()
+  val shape = result.shape()
   for (row <- 0 until shape(0)) {
     val rowItem = result.getRow(row)
     val index = findMaxItemIndex(rowItem)

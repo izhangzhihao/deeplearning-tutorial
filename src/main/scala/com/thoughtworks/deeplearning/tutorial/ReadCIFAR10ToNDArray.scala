@@ -19,7 +19,11 @@ object ReadCIFAR10ToNDArray {
   lazy val fileBytesSeq: IndexedSeq[Array[Byte]] = {
     for {
       fileIndex <- 1 to 5
-      inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+      //if you are using IDE
+      //inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+
+      //if you are using jupyter notebook,please use this
+      inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
     } yield readFromInputStream(inputStream)
   }
 
@@ -136,5 +140,4 @@ object ReadCIFAR10ToNDArray {
     }
     resultList
   }
-
 }
