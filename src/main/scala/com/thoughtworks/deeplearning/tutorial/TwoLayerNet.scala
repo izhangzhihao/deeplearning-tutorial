@@ -37,7 +37,7 @@ object TwoLayerNet extends App {
       new DifferentiableINDArray.Optimizers.L2Regularization {
         override protected def l2Regularization = 0.03
 
-        var learningRate = 0.005
+        var learningRate = 0.001
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -93,16 +93,16 @@ object TwoLayerNet extends App {
     max((row dot w) + b, 0.0)
   }
 
-  def sigmoid(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    1.0 / (exp(-input) + 1.0)
-  }
+//  def sigmoid(implicit input: From[INDArray]##T): To[INDArray]##T = {
+//    1.0 / (exp(-input) + 1.0)
+//  }
 
   def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
-  def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(
+  def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
       implicit row: From[INDArray]##T): To[INDArray]##T = {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight //* 0.1
@@ -113,19 +113,19 @@ object TwoLayerNet extends App {
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
     val layer0 = fullyConnectedThenRelu(3072, 500).compose(input)
-    layer0.withOutputDataHook { data =>
-      println(data)
-    }
+//    layer0.withOutputDataHook { data =>
+//      println(data)
+//    }
     //val layer1 = fullyConnectedThenRelu(3072, 3072).compose(layer0)
     //val layer2 = fullyConnectedThenRelu(3072, 3072).compose(layer1)
-    fullyConnectedThenSigmoid(500, 10).compose(layer0)
+    fullyConnectedThenSoftmax(500, 10).compose(layer0)
   }
 
   val predictor = hiddenLayer
 
-  implicit def optimizer: Optimizer = new LearningRate {
-    def currentLearningRate() = 0.0001
-  }
+//  implicit def optimizer: Optimizer = new LearningRate {
+//    def currentLearningRate() = 0.0001
+//  }
 
   def crossEntropy(
       implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
