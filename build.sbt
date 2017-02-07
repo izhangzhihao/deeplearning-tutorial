@@ -1,7 +1,8 @@
-
 name := "deeplearning-tutorial"
 
 version := "1.0"
+
+scalaVersion in Global := "2.11.8"
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % "latest.release"
 
