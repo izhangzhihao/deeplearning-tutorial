@@ -20,4 +20,5 @@ With the help of DeepLearning.scala, regular programmers are able to build compl
 - [getting start](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/GettingStarted.ipynb)
 - [softmax](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/SoftmaxLinearClassifier.ipynb)
 - [mini-batch gradient descent](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/MiniBatchGradientDescent.ipynb)
+- [Two layer net](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/TwoLayerNet.ipynb)
 
