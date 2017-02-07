@@ -11,7 +11,10 @@ import com.thoughtworks.deeplearning.Poly.MathOps
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
+import plotly.Scatter
 import shapeless._
+import plotly.Plotly._
+import plotly._
 
 /**
   * Created by 张志豪 on 1/16/17.
@@ -44,9 +47,23 @@ object GettingStarted extends App {
 
   val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
 
-  for (_ <- 0 until 2000) {
-    lossFunction.train(input :: expectedOutput :: HNil)
+  var lossSeq: Seq[Double] = Nil
+
+  for (_ <- 0 until 30) {
+    val loss = lossFunction.train(input :: expectedOutput :: HNil)
+    lossSeq = lossSeq :+ loss.toString.toDouble
   }
+
+  val plot = Seq(
+    Scatter(
+      0 until 2000 by 1,
+      lossSeq
+    )
+  )
+
+  plot.plot(
+    title = "loss on time"
+  )
 
   // The loss should be close to zero
   println(s"loss: ${lossFunction.predict(input :: expectedOutput :: HNil)}")

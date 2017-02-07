@@ -24,7 +24,10 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
+import plotly.Scatter
 import shapeless._
+import plotly.Plotly._
+import plotly._
 
 /**
   * Created by 张志豪 on 2017/1/22.
@@ -99,10 +102,24 @@ object SoftmaxLinearClassifier extends App {
     -(expectedOutput * log(probabilities)).sum //此处和准备一节中的交叉熵损失对应
   }
 
+  var lossSeq: Seq[Double] = Nil
+
   for (_ <- 0 until 2000) {
     val loss = lossFunction.train(train_data :: p :: HNil)
+    lossSeq = lossSeq :+ loss.toString.toDouble
     println(s"loss : $loss")
   }
+
+  val plot = Seq(
+    Scatter(
+      0 until 2000 by 1,
+      lossSeq
+    )
+  )
+
+  plot.plot(
+    title = "loss on time"
+  )
 
   val result = myNeuralNetwork.predict(test_data)
   println(s"result: $result") //输出判断结果

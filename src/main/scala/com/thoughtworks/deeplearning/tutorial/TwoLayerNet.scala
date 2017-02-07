@@ -24,7 +24,13 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
+import plotly.Scatter
 import shapeless._
+import org.nd4s.Implicits._
+import plotly.Scatter
+import shapeless._
+import plotly.Plotly._
+import plotly._
 
 /**
   * Created by 张志豪 on 2017/2/6.
@@ -135,12 +141,26 @@ object TwoLayerNet extends App {
 
   val trainer = network
 
+  var lossSeq: Seq[Double] = Nil
+
   for (_ <- 0 until 2000) {
     val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
     val loss = network.train(
       trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
+    lossSeq = lossSeq :+ loss.toString.toDouble
     println(s"loss : $loss")
   }
+
+  val plot = Seq(
+    Scatter(
+      0 until 2000 by 1,
+      lossSeq
+    )
+  )
+
+  plot.plot(
+    title = "loss on time"
+  )
 
   val result = predictor.predict(test_data)
   println(s"result: $result") //输出判断结果

@@ -20,9 +20,10 @@ libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablecoprodu
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarray" % "latest.release"
 
+libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.0"
+
 addCompilerPlugin("com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "latest.release")
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 fork := true
-    
