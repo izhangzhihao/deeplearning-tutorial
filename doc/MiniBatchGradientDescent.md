@@ -185,7 +185,7 @@ object ReadCIFAR10ToNDArray {
   }
 ```
 
-9.训练神经网络并观察每次训练loss的变化，loss的变化趋势应该是越来越低的，注意：这里和与SoftmaxLinearClassifier中不同
+9.训练神经网络并观察每次训练loss的变化，loss的变化趋势是降低，但是不是每次都降低(前途是光明的，道路是曲折的)
 
 ```scala
   for (_ <- 0 until 2000) {
