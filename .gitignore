@@ -1,5 +1,5 @@
 project/target
-src/main/resources
 target
 notebook/.ipynb_checkpoints
 *.html
+src/main/resources/cifar-10-batches-bin
