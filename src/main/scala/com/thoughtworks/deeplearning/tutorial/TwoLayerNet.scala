@@ -93,10 +93,6 @@ object TwoLayerNet extends App {
     max((row dot w) + b, 0.0)
   }
 
-//  def sigmoid(implicit input: From[INDArray]##T): To[INDArray]##T = {
-//    1.0 / (exp(-input) + 1.0)
-//  }
-
   def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
@@ -107,17 +103,11 @@ object TwoLayerNet extends App {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight //* 0.1
     val b = Nd4j.zeros(outputSize).toWeight
-    //sigmoid.compose((row dot w) + b)
     softmax.compose((row dot w) + b)
   }
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
     val layer0 = fullyConnectedThenRelu(3072, 500).compose(input)
-//    layer0.withOutputDataHook { data =>
-//      println(data)
-//    }
-    //val layer1 = fullyConnectedThenRelu(3072, 3072).compose(layer0)
-    //val layer2 = fullyConnectedThenRelu(3072, 3072).compose(layer1)
     fullyConnectedThenSoftmax(500, 10).compose(layer0)
   }
 
