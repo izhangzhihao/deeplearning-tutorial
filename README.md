@@ -1,4 +1,4 @@
-# Tutorial[![Build Status](https://travis-ci.org/izhangzhihao/deeplearning-tutorial.svg?branch=master)](https://travis-ci.org/izhangzhihao/deeplearning-tutorial)
+# Tutorial of DeepLearning.scala [![Build Status](https://travis-ci.org/izhangzhihao/deeplearning-tutorial.svg?branch=master)](https://travis-ci.org/izhangzhihao/deeplearning-tutorial)
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
@@ -15,10 +15,11 @@ With the help of DeepLearning.scala, regular programmers are able to build compl
 - [softmax](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/SoftmaxLinearClassifier.md)
 - [mini-batch gradient descent](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/MiniBatchGradientDescent.md)
 - [how to debug](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/Debug.md)
+- [two layer net](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/doc/TwoLayerNet.md)
 
 ### 1 - Getting Start（Jupyter notebook）
 - [getting start](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/GettingStarted.ipynb)
 - [softmax](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/SoftmaxLinearClassifier.ipynb)
 - [mini-batch gradient descent](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/MiniBatchGradientDescent.ipynb)
-- [Two layer net](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/TwoLayerNet.ipynb)
+- [two layer net](https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/notebook/TwoLayerNet.ipynb)
 
