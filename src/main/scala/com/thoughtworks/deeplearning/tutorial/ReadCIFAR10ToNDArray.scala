@@ -16,17 +16,43 @@ import scala.collection.immutable.IndexedSeq
   */
 object ReadCIFAR10ToNDArray {
 
-  lazy val fileBytesSeq: IndexedSeq[Array[Byte]] = {
-    for {
-      fileIndex <- 1 to 5
+  lazy val originalFileBytesArray: Array[Array[Byte]] = {
+    val originalFileBytesSeq = for (fileIndex <- 1 to 5) yield {
       //if you are using IDE
-      //inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+      //val inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
 
       //if you are using jupyter notebook,please use this
-      inputStream = new FileInputStream(sys
+      val inputStream = new FileInputStream(sys
         .env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
-    } yield readFromInputStream(inputStream)
+      readFromInputStream(inputStream)
+    }
+    originalFileBytesSeq.toArray
   }
+
+  lazy val pixelBytesArray: Array[Array[Array[Double]]] = {
+    val pixelBytesSeq = for (fileIndex <- 0 until 5) yield {
+      val originalFileBytes = originalFileBytesArray(fileIndex)
+      val pixelSeq = for (index <- 0 until 10000) yield {
+        val beginIndex = index * 3073 + 1
+        normalizePixel(originalFileBytes.slice(beginIndex, beginIndex + 3072))
+      }
+      pixelSeq.toArray
+    }
+    pixelBytesSeq.toArray
+  }
+
+  lazy val labelBytesArray: Array[Array[Int]] = {
+    val labelBytesSeq = for (fileIndex <- 0 until 5) yield {
+      val originalFileBytes = originalFileBytesArray(fileIndex)
+      for (index <- 0 until 10000) yield {
+        val beginIndex = index * 3073
+        originalFileBytes(beginIndex).toInt
+      }
+    }.toArray
+    labelBytesSeq.toArray
+  }
+
+  val random = new util.Random
 
   /**
     * 从inputStream中读取byte
@@ -62,17 +88,17 @@ object ReadCIFAR10ToNDArray {
       val bytes = Array.range(0, 3073 * count).map(_.toByte)
       inputStream.read(bytes)
 
-      val labels: Seq[Double] = for {
-        index <- 0 until count
-      } yield bytes(index * 3073).toDouble
+      val labels: Seq[Double] =
+        for (index <- 0 until count) yield {
+          bytes(index * 3073).toDouble
+        }
 
       val pixels: Seq[Seq[Double]] =
-        for (index <- 0 until count)
-          yield {
-            for {
-              item <- 1 until 3073
-            } yield normalizePixel(bytes(index * 3073 + item).toDouble)
+        for (index <- 0 until count) yield {
+          for (item <- 1 until 3073) yield {
+            normalizePixel(bytes(index * 3073 + item).toDouble)
           }
+        }
 
       val labelsArray = labels.toNDArray.reshape(count, 1)
       val pixelsArray = pixels.toNDArray
@@ -98,32 +124,48 @@ object ReadCIFAR10ToNDArray {
   }
 
   /**
+    * 归一化数组的pixel数据
+    *
+    * @param original
+    * @return
+    */
+  def normalizePixel(original: Array[Byte]): Array[Double] = {
+    for (pixel <- original) yield {
+      normalizePixel(pixel)
+    }
+  }
+
+  /**
     * 随机获取count个train数据
     *
     * @return
     */
   def getSGDTrainNDArray(count: Int): INDArray :: INDArray :: HNil = {
     //生成0到4的随机数
-    val randomIndex = (new util.Random).nextInt(5)
-    val bytes = fileBytesSeq(randomIndex)
+    val randomIndex = random.nextInt(5)
+    val labelBytes = labelBytesArray(randomIndex)
+    val pixelBytes = pixelBytesArray(randomIndex)
 
-    val indexList = randomList(10000, count)
+    //labelBytes.forall(item => item >= 0 && item < 10)
 
-    val labels: Seq[Double] = for (index <- 0 until count)
-      yield bytes(indexList(index) * 3073).toDouble
+    if (count > 10000)
+      throw new RuntimeException("your mini-batch size is too big")
+    val indexArray = randomArray(10000, count)
 
-    val pixels: Seq[Seq[Double]] = for (index <- 0 until count)
-      yield {
-        for (pixelItem <- 1 until 3073)
-          yield
-            normalizePixel(bytes(indexList(index) * 3073 + pixelItem).toDouble)
+    val labels: Seq[Int] =
+      for (index <- 0 until count) yield {
+        labelBytes(indexArray(index))
+      }
+
+    val pixels: Seq[Seq[Double]] =
+      for (index <- 0 until count) yield {
+        pixelBytes(indexArray(index)).toList
       }
 
     val labelsNDArray = labels.toNDArray.reshape(count, 1)
     val pixelsNDArray = pixels.toNDArray
 
     pixelsNDArray :: labelsNDArray :: HNil
-
   }
 
   /**
@@ -133,14 +175,10 @@ object ReadCIFAR10ToNDArray {
     * @param count   个数
     * @return
     */
-  def randomList(arrange: Int, count: Int): List[Int] = {
-    var resultList: List[Int] = Nil
-    while (resultList.length < count) {
-      val randomNum = (new util.Random).nextInt(arrange)
-      if (!resultList.contains(randomNum)) {
-        resultList = resultList ::: List(randomNum)
-      }
-    }
-    resultList
+  def randomArray(arrange: Int, count: Int): Array[Int] = {
+    random
+      .shuffle[Int, IndexedSeq](0 until arrange) //https://issues.scala-lang.org/browse/SI-6948
+      .take(count)
+      .toArray
   }
 }
