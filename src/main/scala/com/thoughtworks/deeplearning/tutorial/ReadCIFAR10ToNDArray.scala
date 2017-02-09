@@ -16,8 +16,11 @@ import scala.collection.immutable.IndexedSeq
   */
 object ReadCIFAR10ToNDArray {
 
+  /**
+    * 原始文件字节
+    */
   lazy val originalFileBytesArray: Array[Array[Byte]] = {
-    val originalFileBytesSeq = for (fileIndex <- 1 to 5) yield {
+    for (fileIndex <- 1 to 5) yield {
       //if you are using IDE
       //val inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
 
@@ -26,31 +29,33 @@ object ReadCIFAR10ToNDArray {
         .env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
       readFromInputStream(inputStream)
     }
-    originalFileBytesSeq.toArray
-  }
+  }.toArray
 
+  /**
+    * 中心化过后的图片
+    */
   lazy val pixelBytesArray: Array[Array[Array[Double]]] = {
-    val pixelBytesSeq = for (fileIndex <- 0 until 5) yield {
+    for (fileIndex <- 0 until 5) yield {
       val originalFileBytes = originalFileBytesArray(fileIndex)
-      val pixelSeq = for (index <- 0 until 10000) yield {
+      for (index <- 0 until 10000) yield {
         val beginIndex = index * 3073 + 1
         normalizePixel(originalFileBytes.slice(beginIndex, beginIndex + 3072))
       }
-      pixelSeq.toArray
-    }
-    pixelBytesSeq.toArray
-  }
+    }.toArray
+  }.toArray
 
+  /**
+    * 图片对应的label
+    */
   lazy val labelBytesArray: Array[Array[Int]] = {
-    val labelBytesSeq = for (fileIndex <- 0 until 5) yield {
+    for (fileIndex <- 0 until 5) yield {
       val originalFileBytes = originalFileBytesArray(fileIndex)
       for (index <- 0 until 10000) yield {
         val beginIndex = index * 3073
         originalFileBytes(beginIndex).toInt
       }
     }.toArray
-    labelBytesSeq.toArray
-  }
+  }.toArray
 
   val random = new util.Random
 
@@ -145,8 +150,6 @@ object ReadCIFAR10ToNDArray {
     val randomIndex = random.nextInt(5)
     val labelBytes = labelBytesArray(randomIndex)
     val pixelBytes = pixelBytesArray(randomIndex)
-
-    //labelBytes.forall(item => item >= 0 && item < 10)
 
     if (count > 10000)
       throw new RuntimeException("your mini-batch size is too big")
