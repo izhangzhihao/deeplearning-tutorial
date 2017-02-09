@@ -94,13 +94,13 @@ object MiniBatchGradientDescent extends App {
     -(expectedOutput * log(probabilities)).sum //此处和准备一节中的交叉熵损失对应
   }
 
-  val lossSeq = for {
-    _ <- 0 until 2000
-    trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
-  } yield
-    lossFunction.train(
+  val lossSeq = for (_ <- 0 until 2000) yield {
+    val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
+    val loss = lossFunction.train(
       trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
-
+    println(loss)
+    loss
+  }
   val plot = Seq(
     Scatter(
       0 until 2000 by 1,

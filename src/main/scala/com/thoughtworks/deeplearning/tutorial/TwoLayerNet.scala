@@ -141,13 +141,13 @@ object TwoLayerNet extends App {
 
   val trainer = network
 
-  val lossSeq = for {
-    _ <- 0 until 2000
-    trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
-  } yield
-    network.train(
+  val lossSeq = for (_ <- 0 until 2000) yield {
+    val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
+    val loss = network.train(
       trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
-
+    println(loss)
+    loss
+  }
   val plot = Seq(
     Scatter(
       0 until 2000 by 1,

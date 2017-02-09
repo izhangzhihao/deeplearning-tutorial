@@ -47,8 +47,11 @@ object GettingStarted extends App {
 
   val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
 
-  val lossSeq = for { _ <- 0 until 30 } yield
-    lossFunction.train(input :: expectedOutput :: HNil)
+  val lossSeq = for (_ <- 0 until 30) yield {
+    val loss = lossFunction.train(input :: expectedOutput :: HNil)
+    println(loss)
+    loss
+  }
 
   val plot = Seq(
     Scatter(
