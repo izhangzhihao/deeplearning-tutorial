@@ -102,13 +102,9 @@ object SoftmaxLinearClassifier extends App {
     -(expectedOutput * log(probabilities)).sum //此处和准备一节中的交叉熵损失对应
   }
 
-  var lossSeq: Seq[Double] = Nil
-
-  for (_ <- 0 until 2000) {
-    val loss = lossFunction.train(train_data :: p :: HNil)
-    lossSeq = lossSeq :+ loss.toString.toDouble
-    println(s"loss : $loss")
-  }
+  val lossSeq = for {
+    _ <- 0 until 2000
+  } yield lossFunction.train(train_data :: p :: HNil)
 
   val plot = Seq(
     Scatter(

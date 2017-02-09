@@ -38,7 +38,7 @@ fork := true
 4.新建一个Scala类ReadCIFAR10ToNDArray,这个类用于从上面的文件中读取图片及其标签数据并做归一化处理（[更多信息](https://www.cs.toronto.edu/~kriz/cifar.html)）,并增加若干方法和属性。代码如下：
 
 
-```scala
+```scala211
 import $plugin.$ivy.`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:1.0.0`
 
 import $ivy.`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC5`
@@ -233,7 +233,7 @@ object ReadCIFAR10ToNDArray {
 2.从CIFAR10 database中读取测试数据的图片和标签信息
 
 
-```scala
+```scala211
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val CLASSES: Int = 10
 
@@ -245,7 +245,7 @@ object ReadCIFAR10ToNDArray {
 3.编写处理标签数据的工具方法，将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0。这样做是为了向cross-entropy loss公式靠拢
 
 
-```scala
+```scala211
   /**
     * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
     *
@@ -268,7 +268,7 @@ object ReadCIFAR10ToNDArray {
 4.分离和处理图像和标签数据，注意：这里和与SoftmaxLinearClassifier中不同
 
 
-```scala
+```scala211
   val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
@@ -276,56 +276,10 @@ object ReadCIFAR10ToNDArray {
   val test_p = makeVectorized(test_expect_result)
 ```
 
-5.编写第一层神经网络
+5.设置学习率，学习率是Weight变化的快慢的直观描述，学习率设置的过小会导致loss下降的很慢，需要更长时间来训练，学习率设置的过大虽然刚开始下降很快但是会导致在接近最低点的时候在附近徘徊loss下降会非常慢。
 
 
-```scala
-  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
-    val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight * 0.1
-    val b = Nd4j.zeros(outputSize).toWeight
-    max((row dot w) + b, 0.0)
-  }
-```
-
-6.编写softmax函数
-
-
-```scala
-  def softmax(implicit scores: From[INDArray] ##T): To[INDArray] ##T = {
-    val expScores = exp(scores)
-    expScores / expScores.sum(1)
-  }
-```
-
-7.编写第二层神经网络
-
-
-```scala
-  def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
-    val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight //* 0.1
-    val b = Nd4j.zeros(outputSize).toWeight
-    softmax.compose((row dot w) + b)
-  }
-```
-
-8.将上面的两层神经网络组合起来
-
-
-```scala
-  def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val layer0 = fullyConnectedThenRelu(3072, 500).compose(input)
-    fullyConnectedThenSoftmax(500, 10).compose(layer0)
-  }
-
-  val predictor = hiddenLayer
-```
-
-9.设置学习率，学习率是Weight变化的快慢的直观描述，学习率设置的过小会导致loss下降的很慢，需要更长时间来训练，学习率设置的过大虽然刚开始下降很快但是会导致在接近最低点的时候在附近徘徊loss下降会非常慢。
-
-
-```scala
+```scala211
   implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
     override def ndArrayOptimizer(
         weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
@@ -348,10 +302,56 @@ object ReadCIFAR10ToNDArray {
   }
 ```
 
+6.编写第一层神经网络
+
+
+```scala211
+  def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
+      implicit row: From[INDArray]##T): To[INDArray]##T = {
+    val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight * 0.1
+    val b = Nd4j.zeros(outputSize).toWeight
+    max((row dot w) + b, 0.0)
+  }
+```
+
+7.编写softmax函数
+
+
+```scala211
+  def softmax(implicit scores: From[INDArray] ##T): To[INDArray] ##T = {
+    val expScores = exp(scores)
+    expScores / expScores.sum(1)
+  }
+```
+
+8.编写第二层神经网络
+
+
+```scala211
+  def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
+      implicit row: From[INDArray]##T): To[INDArray]##T = {
+    val w = (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight //* 0.1
+    val b = Nd4j.zeros(outputSize).toWeight
+    softmax.compose((row dot w) + b)
+  }
+```
+
+9.将上面的两层神经网络组合起来
+
+
+```scala211
+  def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
+    val layer0 = fullyConnectedThenRelu(3072, 500).compose(input)
+    fullyConnectedThenSoftmax(500, 10).compose(layer0)
+  }
+
+  val predictor = hiddenLayer
+```
+
 10.编写损失函数Loss Function，将此次判断的结果和真实结果进行计算得出cross-entropy loss并返回
 
 
-```scala
+```scala211
   def crossEntropy(
       implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val score = pair.head
@@ -363,7 +363,7 @@ object ReadCIFAR10ToNDArray {
 11.组合输入层和隐含层
 
 
-```scala
+```scala211
   def network(
       implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val input = pair.head
@@ -379,14 +379,13 @@ object ReadCIFAR10ToNDArray {
 12.训练神经网络并观察每次训练loss的变化，loss的变化趋势是降低，但是不是每次都降低(前途是光明的，道路是曲折的)
 
 
-```scala
-  var lossSeq: Seq[Double] = Nil
-  for (_ <- 0 until 2000) {
-    val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
-    val loss = network.train(
+```scala211
+  val lossSeq = for {
+    _ <- 0 until 2000
+    trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
+  } yield
+    network.train(
       trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
-    lossSeq = lossSeq :+ loss.toString.toDouble
-  }
 
   plotly.JupyterScala.init()
   val plot = Seq(
@@ -404,7 +403,7 @@ object ReadCIFAR10ToNDArray {
 13.使用训练后的神经网络判断测试数据的标签
 
 
-```scala
+```scala211
   val result = predictor.predict(test_data)
   println(s"result: $result") //输出判断结果
 ```
@@ -412,7 +411,7 @@ object ReadCIFAR10ToNDArray {
 14.编写工具方法，从一行INDArray中获得值最大的元素所在的列，目的是获得神经网络判断的结果，方便和原始标签比较以得出正确率。
 
 
-```scala
+```scala211
   /**
     * 从一行INDArray中获得值最大的元素所在的列
     * @param iNDArray
@@ -437,7 +436,7 @@ object ReadCIFAR10ToNDArray {
 15.判断神经网络对测试数据分类判断的正确率，正确率应该在52%左右。
 
 
-```scala
+```scala211
 var right = 0
 
   val shape = result.shape()

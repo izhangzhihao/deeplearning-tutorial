@@ -1,7 +1,7 @@
+
 Deep learning is a great tool that helps us efficiently summarize inherent patterns from tons of input data. I'd like to introduce DeepLearning.scala by letting the framework learn the common difference from Arithmetic progression.
 
-
-##Background
+## Background
 
 
 **Input**:
@@ -16,16 +16,14 @@ Deep learning is a great tool that helps us efficiently summarize inherent patte
 So here we want DeepLearning.scala to learn the common difference from the AP, i.e. ```{1} from {0, 1, 2} ``` 
 in which `2-1 = 1-0 = 1 `
 
-
-##Network Design
-
+## Network Design
 
 ### Step 1: Install DeepLearning.scala
 
 DeepLearning.scala is hosted on Maven Central repository.
 If you use [sbt](http://www.scala-sbt.org), please add the following settings in your `build.sbt`:
 
-``` sbt
+```
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % "latest.release"
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablenothing" % "latest.release"
@@ -51,6 +49,42 @@ fork := true
 
 Note that this example does not run on Scala 2.12 because [nd4j](http://nd4j.org/) does not support Scala 2.12. Make sure there is not a setting like `scalaVersion := "2.12.1"` in your `build.sbt`.
 
+For [jupyter-scala](https://github.com/alexarchambault/jupyter-scala) or [Ammonite-REPL](http://www.lihaoyi.com/Ammonite/#Ammonite-REPL), you can use magic imports, which will download DeepLearning.scala and its dependencies for you.
+
+
+```scala211
+import $plugin.$ivy.`com.thoughtworks.implicit-dependent-type::implicit-dependent-type:1.0.0`
+
+import $ivy.`com.thoughtworks.deeplearning::differentiableany:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiablenothing:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiableseq:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiabledouble:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiablefloat:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiablehlist:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiablecoproduct:1.0.0-RC5`
+import $ivy.`com.thoughtworks.deeplearning::differentiableindarray:1.0.0-RC5`
+
+import $ivy.`org.plotly-scala::plotly-jupyter-scala:0.3.0`
+
+import com.thoughtworks.deeplearning.DifferentiableHList._
+import com.thoughtworks.deeplearning.DifferentiableDouble._
+import com.thoughtworks.deeplearning.DifferentiableINDArray._
+import com.thoughtworks.deeplearning.DifferentiableAny._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
+import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Poly.MathFunctions._
+import com.thoughtworks.deeplearning.Poly.MathOps
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
+import org.nd4s.Implicits._
+import shapeless._
+
+import plotly._
+import plotly.element._
+import plotly.layout._
+import plotly.JupyterScala._
+```
+
 See [Scaladex](https://index.scala-lang.org/thoughtworksinc/deeplearning.scala) for settings of other build tools.
 
 ### Step 2: Design your own neural network
@@ -63,19 +97,21 @@ In the following sections, you will learn:
  * how to create a neural network
  * how to train a neural network
 
-#### 2.1 Define Input/Output Type 
 Like a `scala.Function`, a neural network has its own input types and output types.
 
 For example, the type of the neural network that accepts an N-dimensional array and returns another N-dimensional array is `(INDArray <=> INDArray)##T`.
 
-``` scala
+
+```scala211
 val myNeuralNetwork: (INDArray <=> INDArray)##T = ???
 ```
 
-In `A <=> B`, A is the input type, and B is the output type. For the example above, both the input type and the output type are `INDArray`.
+In `(A <=> B)##T`, A is the input type, and B is the output type. For the example above, both the input type and the output type are `INDArray`.
+
 
 `##T` is a syntactic sugar to create implicit dependent types. See [implicit-dependent-type](https://github.com/ThoughtWorksInc/implicit-dependent-type) for more information about `##`.
 
+The above code throws an `NotImplementedError` because we have not been implemtnted the neural network.
 In later sections of this article, you will replace `???` to a valid neural network.
 
 #### 2.2 Use a neural network as a predictor
@@ -83,22 +119,18 @@ In later sections of this article, you will replace `???` to a valid neural netw
 Like a normal `scala.Function`, if you pass the input data to the neural network, it will return some results.
 You can use the `predict` method to invoke a neural network.
 
-``` scala
+
+```scala211
 val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
 val predictionResult: INDArray = myNeuralNetwork.predict(input)
 ```
 
+The above code throws an `NotImplementedError` because `myNeuralNetwork` has not been implemented.
+We will fix the problem by creating a valid neural network.
+
 #### 2.3 Create a neural network
 
 Same as the definition of a normal Scala function, the definition of neural network consists of a type definition for its parameter, a type definition for its return value, and a body that contains mathematical formulas, function-calls, and control flows.
-
-``` scala
-def createMyNeuralNetwork(implicit input: From[INDArray]##T): To[INDArray]##T = {
-  val initialValueOfWeight = Nd4j.randn(3, 1)
-  val weight: To[INDArray]##T = initialValueOfWeight.toWeight
-  input dot weight
-}
-```
 
 ##### 2.3.1  Weight Intialization 
 
@@ -108,9 +140,19 @@ You can create weight variables via `toWeight` method, given its initial value.
 
 In order to create a weight, you must create an `Optimizer`, which contains the rule that manages how the weight changes. See [Scaladoc](https://javadoc.io/page/com.thoughtworks.deeplearning/unidoc_2.11/latest/com/thoughtworks/deeplearning/DifferentiableINDArray$$Optimizers$.html) for a list of built-in optimizers.
 
-``` scala
+
+```scala211
 implicit def optimizer: Optimizer = new LearningRate {
-  def currentLearningRate() = 0.001
+    def currentLearningRate() = 0.001
+}
+```
+
+
+```scala211
+def createMyNeuralNetwork(implicit input: From[INDArray]##T): To[INDArray]##T = {
+    val initialValueOfWeight = Nd4j.randn(3, 1)
+    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
+    input dot weight
 }
 ```
 
@@ -126,8 +168,9 @@ and `To` is the placeholder type for return values and other local variables.
 
 `From` must be `implicit` so that it is automatically generated when you create the neural network. Otherwise, you have to manually pass the `From` placeholder to `createMyNeuralNetwork`.
 
-``` scala
-val myNeuralNetwork: (INDArray <=> INDArray)##T = createMyNeuralNetwork
+
+```scala211
+val myNeuralNetwork = createMyNeuralNetwork
 ```
 
 ### Step 3: Train your Neuro Network
@@ -145,11 +188,12 @@ What if you expect `myNeuralNetwork.predict(Array(Array(0, 1, 2), Array(3, 6, 9)
 
 You can create another neural network that evaluates how far between the result of `myNeuralNetwork` and your expectation. The new neural network is usually called **loss function**.
 
-``` scala
+
+```scala211
 def lossFunction(implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
-  val input = pair.head
-  val expectedOutput = pair.tail.head
-  abs(myNeuralNetwork.compose(input) - expectedOutput).sum
+    val input = pair.head
+    val expectedOutput = pair.tail.head
+    abs(myNeuralNetwork.compose(input) - expectedOutput).sum
 }
 ```
 
@@ -160,18 +204,38 @@ The `HList` consists of two N-dimensional arrays.
 The first array is the input data used to train the neural network, and the second array is the expected output.
 
 
-``` scala
+```scala211
 val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
 val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
+```
 
-for (iteration <- 0 until 2000) {
-  lossFunction.train(input :: expectedOutput :: HNil)
-}
 
-// The loss should be close to zero
+```scala211
+  val lossSeq = for { _ <- 0 until 30 } yield
+    lossFunction.train(input :: expectedOutput :: HNil)
+
+  plotly.JupyterScala.init()
+  val plot = Seq(
+    Scatter(
+      0 until 30 by 1,
+      lossSeq
+    )
+  )
+
+  plot.plot(
+    title = "loss on time"
+  )
+```
+
+
+```scala211
+// The loss should close to zero
 println(s"loss: ${ lossFunction.predict(input :: expectedOutput :: HNil) }")
+```
 
-// The prediction result should be close to expectedOutput
+
+```scala211
+// The prediction result should close to Array(Array(1), Array(0)).toNDArray
 println(s"result: ${ myNeuralNetwork.predict(input) }")
 ```
 
@@ -182,54 +246,3 @@ In this article, you have learned:
 * to compose a neural network into a larger neural network
 * to train a neural network
 * to use a neural network as a predictor
-
-The complete source codes used in this article are :
-
-``` scala
-import com.thoughtworks.deeplearning.DifferentiableHList._
-import com.thoughtworks.deeplearning.DifferentiableDouble._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
-import com.thoughtworks.deeplearning.DifferentiableAny._
-import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.Lift._
-import com.thoughtworks.deeplearning.Poly.MathFunctions._
-import com.thoughtworks.deeplearning.Poly.MathOps
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4s.Implicits._
-import shapeless._
-
-object GettingStarted extends App {
-
-  implicit def optimizer: Optimizer = new LearningRate {
-    def currentLearningRate() = 0.001
-  }
-
-  def createMyNeuralNetwork(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val initialValueOfWeight = Nd4j.randn(3, 1)
-    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
-    input dot weight
-  }
-
-  val myNeuralNetwork: (INDArray <=> INDArray)##T = createMyNeuralNetwork
-
-  def lossFunction(implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
-    val input = pair.head
-    val expectedOutput = pair.tail.head
-    abs(myNeuralNetwork.compose(input) - expectedOutput).sum
-  }
-
-  val input: INDArray = Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
-  val expectedOutput: INDArray = Array(Array(1), Array(3), Array(2)).toNDArray
-
-  for (iteration <- 0 until 2000) {
-    lossFunction.train(input :: expectedOutput :: HNil)
-  }
-
-  // The loss should close to zero
-  println(s"loss: ${ lossFunction.predict(input :: expectedOutput :: HNil) }")
-
-  // The prediction result should close to Array(Array(1), Array(0)).toNDArray
-  println(s"result: ${ myNeuralNetwork.predict(input) }")
-}
-```
