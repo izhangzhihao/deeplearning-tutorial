@@ -122,13 +122,13 @@ object convolutionTest extends App {
     (out, cols2d)
   }
 
-  def conv_backword(outputData: INDArray :: INDArray :: HNil,
+  def conv_backword(outputData: INDArray,
                     cols2d: INDArray): (INDArray, INDArray, INDArray) = {
-    val db = W1.sum(0, 2, 3)
-    val dout = W1.permute(1, 2, 3, 0).reshape(FILTER_NUMBER, -1) //3*27
+    val db = outputData.sum(0, 2, 3)
+    val dout = outputData.permute(1, 2, 3, 0).reshape(FILTER_NUMBER, -1) //3*115600
 
     val dw = dout
-      .dot(cols2d.T)
+      .dot(cols2d)
       .reshape(FILTER_NUMBER, DEPTH, FILTER_SIZE, FILTER_SIZE)
 
     val dx_cols = W1.reshape(FILTER_NUMBER, -1).T.dot(dout)
@@ -158,52 +158,10 @@ object convolutionTest extends App {
 
     //W1.sumNumber()
 
-    conv_backword(inputData, out_cols._2)
+    conv_backword(out_cols._1, out_cols._2)
 //    maxpool_forward()
 //    maxpool_backword()
 //    conv_backword()
-
-    //softmax_loss(out...)
-
-    //每个图片
-    /*for (index <- 0 until imageCount) {
-      //遍历每个核(使用某一个核来卷积处理图像数据)
-      for (filterNumber <- 0 until FILTER_NUMBER) {
-        //遍历经过某一个核卷积后输出样本矩阵的长度
-        for (outputXSize <- 0 until outputSize by STRIDE) {
-          //遍历经过某一个核卷积后输出样本矩阵的宽度
-          for (outputYSize <- 0 until outputSize by STRIDE) {
-            //遍历每个channel(使用某个核来卷积处理每个channel数据)
-            for (depth <- 0 until DEPTH) {
-              val w = W.get(NDArrayIndex.point(filterNumber),
-                            NDArrayIndex.point(depth),
-                            NDArrayIndex.all(),
-                            NDArrayIndex.all())
-              val x = padImageData.get(
-                NDArrayIndex.point(index),
-                NDArrayIndex.point(depth),
-                NDArrayIndex.interval(outputXSize, FILTER_SIZE + outputXSize),
-                NDArrayIndex.interval(outputYSize, FILTER_SIZE + outputYSize)
-              )
-
-              val oldOutput = output.get(NDArrayIndex.point(index),
-                                         NDArrayIndex.point(filterNumber),
-                                         NDArrayIndex.point(outputXSize),
-                                         NDArrayIndex.point(outputYSize))
-              val newOutput =
-                oldOutput + w.dot(x).sumNumber() + B.getDouble(filterNumber)
-              output.put(
-                Array(NDArrayIndex.point(index),
-                      NDArrayIndex.point(filterNumber),
-                      NDArrayIndex.point(outputXSize),
-                      NDArrayIndex.point(outputYSize)),
-                newOutput //激活函数处理？
-              )
-            }
-          }
-        }
-      }
-    }*/
 
     1.1
   }
