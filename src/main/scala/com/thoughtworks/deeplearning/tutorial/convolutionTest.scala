@@ -12,7 +12,7 @@ import shapeless.{::, HNil}
   */
 object convolutionTest extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
-  val CLASSES: Int = 10
+  val NumberOfClasses: Int = 10
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -21,15 +21,15 @@ object convolutionTest extends App {
       100)
 
   /**
-    * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
+    * 处理标签数据：将N行一列的NDArray转换为N行NumberOfClasses列的NDArray，每行对应的正确分类的值为1，其它列的值为0
     *
     * @param ndArray 标签数据
-    * @return N行CLASSES列的NDArray
+    * @return N行NumberOfClasses列的NDArray
     */
   def makeVectorized(ndArray: INDArray): INDArray = {
     val shape = ndArray.shape()
 
-    val p = Nd4j.zeros(shape(0), CLASSES)
+    val p = Nd4j.zeros(shape(0), NumberOfClasses)
     for (i <- 0 until shape(0)) {
       val double = ndArray.getDouble(i, 0)
       val column = double.toInt
@@ -44,102 +44,102 @@ object convolutionTest extends App {
 
   val test_p = makeVectorized(test_expect_result)
 
-  val DEPTH = 3
+  val Depth = 3
 
-  val MINI_BATCH_SIZE = 100
+  val MiniBatchSize = 1
 
-  val STRIDE = 1 // 步长
+  val Stride = 1 // 步长
 
-  val PADDING = 1 //零填充数量
+  val Padding = 1 //零填充数量
 
-  val FILTER_NUMBER = 3 //滤波器的数量
+  val FilterNumber = 1 //滤波器的数量
 
-  val FILTER_SIZE = 3 //F 滤波器的空间尺寸
+  val FilterSize = 3 //F 滤波器的空间尺寸
 
-  val INPUT_SIZE = 32 // W 输入数据尺寸
+  val InputSize = 3 // W 输入数据尺寸
 
-  val POOL_SIZE = 2 //maxPool 2*2
+  val PoolSize = 2 //maxPool 2*2
 
-  val W1 =
-    (Nd4j.randn(Array(FILTER_NUMBER, DEPTH, FILTER_SIZE, FILTER_SIZE)) / math
-      .sqrt(FILTER_SIZE / 2.0)) * 0.1
+//  val W1 =
+//    (Nd4j.randn(Array(FILTER_NUMBER, DEPTH, FILTER_SIZE, FILTER_SIZE)) / math
+//      .sqrt(FILTER_SIZE / 2.0)) * 0.1
 
-  val B1 = Nd4j.zeros(FILTER_NUMBER)
+  val W1 = (1 to 27).toNDArray
+    .reshape(FilterNumber, 3, 3, 3) //filter_number*depth*filter_size*filter_size
 
-  val outputSize = (INPUT_SIZE + 2 * PADDING - FILTER_SIZE) / STRIDE + 1
+  val B1 = Nd4j.zeros(FilterNumber)
+
+  val outputSize = (InputSize + 2 * Padding - FilterSize) / Stride + 1
 
   val output =
-    Nd4j.zeros(MINI_BATCH_SIZE, FILTER_NUMBER, outputSize, outputSize)
+    Nd4j.zeros(MiniBatchSize, FilterNumber, outputSize, outputSize)
 
   val outputShape = output.shape()
 
   def conv_forward(
       inputData: INDArray :: INDArray :: HNil): (INDArray, INDArray) = {
-    val input = inputData.head
-    assert((INPUT_SIZE + 2 * PADDING - FILTER_SIZE) % STRIDE == 0)
+    val input = inputData.head.permute(0, 1, 2, 3)
 
-    assert(outputSize == INPUT_SIZE)
+    println(input.shape().toSeq)
+
+    assert((InputSize + 2 * Padding - FilterSize) % Stride == 0)
+
+    assert(outputSize == InputSize)
 
     val inputShape = input.shape() //imageCount*3072
 
     val imageCount = inputShape(0) //imageCount
 
-    val col = Nd4j.createUninitialized(Array(imageCount,
-                                             DEPTH,
-                                             INPUT_SIZE + 2 * PADDING,
-                                             INPUT_SIZE + 2 * PADDING,
-                                             FILTER_SIZE,
-                                             FILTER_SIZE),
-                                       'c')
+    val cols = Convolution.im2col(input,
+                                  Array(FilterSize, FilterSize),
+                                  Array(Stride, Stride),
+                                  Array(0, 0))
 
-    val cols = Convolution.im2col(padImageData,
-                                  FILTER_SIZE,
-                                  FILTER_SIZE,
-                                  STRIDE,
-                                  STRIDE,
-                                  PADDING,
-                                  PADDING,
-                                  true,
-                                  col) // imageCount*3*34*34*3*3
+    println("cols:" + cols)
 
-    val cols2d = cols.reshape(
-      'c',
-      imageCount * (INPUT_SIZE + 2 * PADDING) * (INPUT_SIZE + 2 * PADDING),
-      DEPTH * FILTER_SIZE * FILTER_SIZE) //115600*27
+    val cols2d = cols.reshape('c',
+                              imageCount * Depth * outputSize,
+                              outputSize * FilterSize * FilterSize) //115600*27
 
-    val reshapeW = W1.reshape(FILTER_SIZE * FILTER_SIZE * DEPTH, -1) //27*3
+    println("cols2d" + cols2d)
+
+    val reshapeW = W1.reshape(FilterSize * FilterSize * Depth, -1) //27*3
 
     //val result = Nd4j.tensorMmul(cols2d, reshapeW, Array(Array(1), Array(1))) //115600*3
 
     val result = cols2d.dot(reshapeW) //115600*3
 
+    //val result = Nd4j.tensorMmul(cols2d, reshapeW, Array(Array(1), Array(0)))
+
+    println("result" + result)
+
     val res = result.addRowVector(B1)
 
     val out = res.reshape(imageCount,
-                          FILTER_NUMBER,
-                          INPUT_SIZE + 2 * PADDING,
-                          INPUT_SIZE + 2 * PADDING) //imageCount*3*34*34
-    (out, cols2d)
+                          FilterNumber,
+                          InputSize + 2 * Padding,
+                          InputSize + 2 * Padding) //imageCount*3*34*34
+    (out, cols)
   }
 
   def conv_backword(outputData: INDArray,
                     cols2d: INDArray): (INDArray, INDArray, INDArray) = {
     val db = outputData.sum(0, 2, 3)
-    val dout = outputData.permute(1, 2, 3, 0).reshape(FILTER_NUMBER, -1) //3*115600
+    val dout = outputData.permute(1, 2, 3, 0).reshape(FilterNumber, -1) //3*115600
 
     val dw = dout
       .dot(cols2d)
-      .reshape(FILTER_NUMBER, DEPTH, FILTER_SIZE, FILTER_SIZE)
+      .reshape(FilterNumber, Depth, FilterSize, FilterSize)
 
-    val dx_cols = W1.reshape(FILTER_NUMBER, -1).T.dot(dout)
+    val dx_cols = W1.reshape(FilterNumber, -1).T.dot(dout)
 
     val dx = Convolution.im2col(dx_cols,
-                                FILTER_SIZE,
-                                FILTER_SIZE,
-                                STRIDE,
-                                STRIDE,
-                                PADDING,
-                                PADDING,
+                                FilterSize,
+                                FilterSize,
+                                Stride,
+                                Stride,
+                                Padding,
+                                Padding,
                                 true)
     (dx, dw, db)
   }
@@ -169,20 +169,32 @@ object convolutionTest extends App {
   def softmax_loss(inputData: INDArray, label: INDArray): (Double, INDArray) =
     ???
 
-  val trainNDArray = ReadCIFAR10ToNDArray.readFromResource(
-    "/cifar-10-batches-bin/test_batch.bin",
-    100) //ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
+//  val trainNDArray = ReadCIFAR10ToNDArray.readFromResource(
+//    "/cifar-10-batches-bin/test_batch.bin",
+//    100) //ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
+//
+//  val inputImageData =
+//    trainNDArray.head.reshape(MINI_BATCH_SIZE, DEPTH, INPUT_SIZE, INPUT_SIZE) //imageCount*3*32*32
+//
+//  val padImageData = Nd4j.pad(inputImageData,
+//                              Array(Array(0, 0),
+//                                    Array(0, 0),
+//                                    Array(PADDING, PADDING),
+//                                    Array(PADDING, PADDING)),
+//                              PadMode.CONSTANT)
 
-  val inputImageData =
-    trainNDArray.head.reshape(MINI_BATCH_SIZE, DEPTH, INPUT_SIZE, INPUT_SIZE) //imageCount*3*32*32
+  val x = (1 to 27).toNDArray
 
-  val padImageData = Nd4j.pad(
-    inputImageData,
-    Array(Array(0, 0), Array(0, 0), Array(1, 1), Array(1, 1)),
-    PadMode.CONSTANT)
+  private val reshapeX = x.reshape(1, 3, 3, 3)
 
-  val loss = network(
-    padImageData :: makeVectorized(trainNDArray.tail.head) :: HNil)
+  val padTest = Nd4j.pad(reshapeX,
+                         Array(Array(0, 0),
+                               Array(0, 0),
+                               Array(Padding, Padding),
+                               Array(Padding, Padding)),
+                         PadMode.CONSTANT)
+
+  val loss = network(padTest :: padTest :: HNil)
 
   var lossSeq =
     for (_ <- 0 until 2000) {
