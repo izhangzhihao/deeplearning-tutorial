@@ -34,7 +34,7 @@ import plotly._
   */
 object SoftmaxLinearClassifier extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
-  val CLASSES: Int = 10
+  val NumberOfClasses: Int = 10
 
   //加载train数据,我们读取1000条数据作为训练数据
   val trainNDArray =
@@ -49,15 +49,15 @@ object SoftmaxLinearClassifier extends App {
       100)
 
   /**
-    * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
+    * 处理标签数据：将N行一列的NDArray转换为N行NumberOfClasses列的NDArray，每行对应的正确分类的值为1，其它列的值为0
     *
     * @param ndArray 标签数据
-    * @return N行CLASSES列的NDArray
+    * @return N行NumberOfClasses列的NDArray
     */
   def makeVectorized(ndArray: INDArray): INDArray = {
     val shape = ndArray.shape()
 
-    val p = Nd4j.zeros(shape(0), CLASSES)
+    val p = Nd4j.zeros(shape(0), NumberOfClasses)
     for (i <- 0 until shape(0)) {
       val double = ndArray.getDouble(i, 0)
       val column = double.toInt
@@ -82,7 +82,7 @@ object SoftmaxLinearClassifier extends App {
 
   def createMyNeuralNetwork(
       implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val initialValueOfWeight = Nd4j.randn(3072, CLASSES) * 0.001
+    val initialValueOfWeight = Nd4j.randn(3072, NumberOfClasses) * 0.001
     val weight: To[INDArray]##T = initialValueOfWeight.toWeight
     val result: To[INDArray]##T = input dot weight
     softmax.compose(result) //对结果调用softmax方法，压缩结果值在0到1之间方便处理

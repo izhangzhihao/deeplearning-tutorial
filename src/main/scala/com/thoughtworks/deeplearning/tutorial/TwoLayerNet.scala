@@ -59,7 +59,7 @@ object TwoLayerNet extends App {
   }
 
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
-  val CLASSES: Int = 10
+  val NumberOfClasses: Int = 10
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -68,15 +68,15 @@ object TwoLayerNet extends App {
       100)
 
   /**
-    * 处理标签数据：将N行一列的NDArray转换为N行CLASSES列的NDArray，每行对应的正确分类的值为1，其它列的值为0
+    * 处理标签数据：将N行一列的NDArray转换为N行NumberOfClasses列的NDArray，每行对应的正确分类的值为1，其它列的值为0
     *
     * @param ndArray 标签数据
-    * @return N行CLASSES列的NDArray
+    * @return N行NumberOfClasses列的NDArray
     */
   def makeVectorized(ndArray: INDArray): INDArray = {
     val shape = ndArray.shape()
 
-    val p = Nd4j.zeros(shape(0), CLASSES)
+    val p = Nd4j.zeros(shape(0), NumberOfClasses)
     for (i <- 0 until shape(0)) {
       val double = ndArray.getDouble(i, 0)
       val column = double.toInt
