@@ -46,13 +46,13 @@ object convolutionTest extends App {
 
   val Depth = 3
 
-  val MiniBatchSize = 1
+  val MiniBatchSize = 2
 
   val Stride = 1 // 步长
 
   val Padding = 1 //零填充数量
 
-  val FilterNumber = 1 //滤波器的数量
+  val FilterNumber = 2 //滤波器的数量
 
   val FilterSize = 3 //F 滤波器的空间尺寸
 
@@ -64,7 +64,7 @@ object convolutionTest extends App {
 //    (Nd4j.randn(Array(FILTER_NUMBER, DEPTH, FILTER_SIZE, FILTER_SIZE)) / math
 //      .sqrt(FILTER_SIZE / 2.0)) * 0.1
 
-  val W1 = (1 to 27).toNDArray
+  val W1 = (1 to 54).toNDArray
     .reshape(FilterNumber, 3, 3, 3) //filter_number*depth*filter_size*filter_size
 
   val B1 = Nd4j.zeros(FilterNumber)
@@ -80,8 +80,6 @@ object convolutionTest extends App {
       inputData: INDArray :: INDArray :: HNil): (INDArray, INDArray) = {
     val input = inputData.head.permute(0, 1, 2, 3)
 
-    println(input.shape().toSeq)
-
     assert((InputSize + 2 * Padding - FilterSize) % Stride == 0)
 
     assert(outputSize == InputSize)
@@ -95,13 +93,9 @@ object convolutionTest extends App {
                                   Array(Stride, Stride),
                                   Array(0, 0))
 
-    println("cols:" + cols)
-
     val cols2d = cols.reshape('c',
                               imageCount * Depth * outputSize,
                               outputSize * FilterSize * FilterSize) //115600*27
-
-    println("cols2d" + cols2d)
 
     val reshapeW = W1.reshape(FilterSize * FilterSize * Depth, -1) //27*3
 
@@ -109,16 +103,9 @@ object convolutionTest extends App {
 
     val result = cols2d.dot(reshapeW) //115600*3
 
-    //val result = Nd4j.tensorMmul(cols2d, reshapeW, Array(Array(1), Array(0)))
-
-    println("result" + result)
-
     val res = result.addRowVector(B1)
 
-    val out = res.reshape(imageCount,
-                          FilterNumber,
-                          InputSize + 2 * Padding,
-                          InputSize + 2 * Padding) //imageCount*3*34*34
+    val out = res.reshape(imageCount, FilterNumber, outputSize, outputSize) //imageCount*3*34*34
     (out, cols)
   }
 
@@ -183,9 +170,9 @@ object convolutionTest extends App {
 //                                    Array(PADDING, PADDING)),
 //                              PadMode.CONSTANT)
 
-  val x = (1 to 27).toNDArray
+  val x = (1 to 54).toNDArray
 
-  private val reshapeX = x.reshape(1, 3, 3, 3)
+  private val reshapeX = x.reshape(2, 3, 3, 3)
 
   val padTest = Nd4j.pad(reshapeX,
                          Array(Array(0, 0),
