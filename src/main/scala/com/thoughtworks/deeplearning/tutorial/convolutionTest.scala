@@ -65,7 +65,7 @@ object convolutionTest extends App {
 //      .sqrt(FILTER_SIZE / 2.0)) * 0.1
 
   val W1 = (1 to 54).toNDArray
-    .reshape(FilterNumber, 3, 3, 3) //filter_number*depth*filter_size*filter_size
+    .reshape(FilterNumber, Depth, FilterSize, FilterSize) //filter_number*depth*filter_size*filter_size
 
   val B1 = Nd4j.zeros(FilterNumber)
 
@@ -105,8 +105,8 @@ object convolutionTest extends App {
 
     val res = result.addRowVector(B1)
 
-    val out = res.reshape(imageCount, FilterNumber, outputSize, outputSize) //imageCount*3*34*34
-    (out, cols)
+    val out = res.reshape(imageCount, FilterNumber, outputSize, outputSize)
+    (out, cols2d)
   }
 
   def conv_backword(outputData: INDArray,
