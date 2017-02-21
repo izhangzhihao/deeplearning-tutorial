@@ -165,15 +165,11 @@ object CNNs extends App {
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
     val layer0 = convolutionThenRelu.compose(input)
-    val layer1 = convolutionThenRelu.compose(layer0)
-    val layer2 = maxPool.compose(layer1)
-
-//    val layer3 = convolutionThenRelu.compose(layer2)
-//    val layer4 = convolutionThenRelu.compose(layer3)
-//    val layer5 = maxPool.compose(layer4)
+    //val layer1 = convolutionThenRelu.compose(layer0)
+    val layer2 = maxPool.compose(layer0)
 
     fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer2)
-//    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)
+//    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)，
 
   }
 
@@ -198,19 +194,7 @@ object CNNs extends App {
 
   val trainNetwork = network
 
-//
-//  val random = new util.Random
-//
-//  for (epic <- 0 until 5) {
-//    val randomIndex = random
-//      .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
-//      .toArray
-//    for (times <- 0 until 10000 / MiniBatchSize) {
-//      val thisindex =
-//        randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
-//      //train>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//    }
-//  }
+  val random = new util.Random
 
   def assertClear(layer: Any): Unit = {
     layer match {
@@ -227,24 +211,35 @@ object CNNs extends App {
     }
   }
 
-  var lossSeq =
-    for (_ <- 0 until 1000) yield {
-      val trainNDArray :: label :: HNil =
-        ReadCIFAR10ToNDArray.getSGDTrainNDArray(MiniBatchSize)
-      val input =
-        trainNDArray.reshape(MiniBatchSize, Depth, InputSize, InputSize)
-      val expectResult = makeVectorized(label)
+  def trainData(randomIndexArray: Array[Int]): Double = {
+    val trainNDArray :: expectLabel :: shapeless.HNil =
+      ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
+    val input =
+      trainNDArray.reshape(MiniBatchSize, Depth, InputSize, InputSize)
+    val expectResult = makeVectorized(expectLabel)
 
-      assertClear(predictor)
-      val loss = trainNetwork.train(input :: expectResult :: HNil)
-      assertClear(predictor)
+    assertClear(predictor)
+    val loss = trainNetwork.train(input :: expectResult :: HNil)
+    assertClear(predictor)
 
-      println(s"loss : $loss")
-      loss
+    println(s"loss : $loss")
+    loss
+  }
+
+  val lossSeq: Seq[Double] = (for (epic <- 0 until 1) yield {
+    val randomIndex = random
+      .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+      .toArray
+    for (times <- 0 until 10000 / MiniBatchSize) yield {
+      val randomIndexArray =
+        randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
+      trainData(randomIndexArray)
     }
+  }).flatten
+
   val plot = Seq(
     Scatter(
-      0 until 1000 by 1,
+      0 until 10000,
       lossSeq
     )
   )

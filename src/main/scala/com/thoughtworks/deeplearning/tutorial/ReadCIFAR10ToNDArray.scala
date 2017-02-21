@@ -145,6 +145,7 @@ object ReadCIFAR10ToNDArray {
     *
     * @return
     */
+  @deprecated
   def getSGDTrainNDArray(count: Int): INDArray :: INDArray :: HNil = {
     //生成0到4的随机数
     val randomIndex = random.nextInt(5)
@@ -178,10 +179,40 @@ object ReadCIFAR10ToNDArray {
     * @param count   个数
     * @return
     */
+  @deprecated
   def randomArray(arrange: Int, count: Int): Array[Int] = {
     random
       .shuffle[Int, IndexedSeq](0 until arrange) //https://issues.scala-lang.org/browse/SI-6948
       .take(count)
       .toArray
+  }
+
+  /**
+    * 随机获取count个train数据
+    *
+    * @return
+    */
+  def getSGDTrainNDArray(
+      randomIndexArray: Array[Int]): INDArray :: INDArray :: HNil = {
+    //生成0到4的随机数
+    val randomIndex = random.nextInt(5)
+    val labelBytes = labelBytesArray(randomIndex)
+    val pixelBytes = pixelBytesArray(randomIndex)
+    val count = randomIndexArray.length
+
+    val labels: Seq[Int] =
+      for (index <- 0 until count) yield {
+        labelBytes(randomIndexArray(index))
+      }
+
+    val pixels: Seq[Seq[Double]] =
+      for (index <- 0 until count) yield {
+        pixelBytes(randomIndexArray(index)).toList
+      }
+
+    val labelsNDArray = labels.toNDArray.reshape(count, 1)
+    val pixelsNDArray = pixels.toNDArray
+
+    pixelsNDArray :: labelsNDArray :: HNil
   }
 }
