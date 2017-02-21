@@ -46,7 +46,7 @@ object CNNs extends App {
       new DifferentiableINDArray.Optimizers.L2Regularization {
         override protected def l2Regularization = 0.03
 
-        var learningRate = 0.000001
+        var learningRate = 0.0001
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -94,7 +94,7 @@ object CNNs extends App {
 
   val test_p = makeVectorized(test_expect_result)
 
-  val MiniBatchSize = 4
+  val MiniBatchSize = 64
 
   val Depth = 3
 
@@ -103,7 +103,6 @@ object CNNs extends App {
   val KernelNumber = 3 //卷积核的数量
 
   def convolutionThenRelu(implicit input: From[INDArray]##T): To[INDArray]##T = {
-
     val imageCount = input.shape(0)
     val inputSize = input.shape(2)
 
@@ -117,7 +116,7 @@ object CNNs extends App {
 
     val weight =
       (Nd4j.randn(Array(KernelNumber, Depth, KernelSize, KernelSize)) /
-        math.sqrt(KernelSize / 2.0)).toWeight * 0.1
+        math.sqrt(KernelSize / 2.0)).toWeight //* 0.1
     val bias = Nd4j.zeros(KernelNumber).toWeight
 
     val colRow = input.im2col(Array(KernelSize, KernelSize),
@@ -165,11 +164,11 @@ object CNNs extends App {
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
     val layer0 = convolutionThenRelu.compose(input)
-    //val layer1 = convolutionThenRelu.compose(layer0)
-    val layer2 = maxPool.compose(layer0)
+    val layer1 = convolutionThenRelu.compose(layer0)
+    val layer2 = maxPool.compose(layer1)
 
     fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer2)
-//    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)，
+    //    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)，
 
   }
 
@@ -196,21 +195,6 @@ object CNNs extends App {
 
   val random = new util.Random
 
-  def assertClear(layer: Any): Unit = {
-    layer match {
-      case cached: BufferedLayer =>
-        assert(cached.cache.isEmpty)
-      case _ =>
-    }
-    layer match {
-      case parent: Product =>
-        for (upstreamLayer <- parent.productIterator) {
-          assertClear(upstreamLayer)
-        }
-      case _ =>
-    }
-  }
-
   def trainData(randomIndexArray: Array[Int]): Double = {
     val trainNDArray :: expectLabel :: shapeless.HNil =
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
@@ -218,15 +202,14 @@ object CNNs extends App {
       trainNDArray.reshape(MiniBatchSize, Depth, InputSize, InputSize)
     val expectResult = makeVectorized(expectLabel)
 
-    assertClear(predictor)
     val loss = trainNetwork.train(input :: expectResult :: HNil)
-    assertClear(predictor)
 
     println(s"loss : $loss")
     loss
   }
 
-  val lossSeq: Seq[Double] = (for (epic <- 0 until 1) yield {
+  val lossSeq: Seq[Double] = (for (epic <- 0 until 5) yield {
+    System.gc()
     val randomIndex = random
       .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
       .toArray
@@ -239,7 +222,7 @@ object CNNs extends App {
 
   val plot = Seq(
     Scatter(
-      0 until 10000,
+      0 until 156 * 5,
       lossSeq
     )
   )
