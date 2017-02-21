@@ -30,6 +30,10 @@ import plotly.Scatter
 import shapeless._
 import plotly.Plotly._
 import plotly._
+import shapeless.OpticDefns.compose
+
+import scala.annotation.tailrec
+import scala.collection.immutable.IndexedSeq
 
 /**
   * Created by 张志豪 on 2017/2/6.
@@ -138,16 +142,10 @@ object CNNs extends App {
   }
 
   def maxPool(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val imageCount = input.shape(0)
-    val depth = input.shape(1)
-    val inputSize = input.shape(2)
-
-    val inputCol = input.im2col(Array(2, 2), Array(2, 2), Array(0, 0))
-    val pooled = inputCol
+    input
+      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
       .permute(0, 1, 4, 5, 2, 3)
       .maxPool(4, 5)
-    pooled
-    //pooled.reshape(imageCount, depth, inputSize / 2, inputSize / 2)
   }
 
   def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
@@ -158,23 +156,24 @@ object CNNs extends App {
   def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
       implicit input: From[INDArray]##T): To[INDArray]##T = {
     val imageCount = input.shape(0)
+
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
-    softmax.compose((input.reshape(imageCount, 3 * 16 * 16.toLayer) dot w) + b)
+    softmax.compose((input.reshape(imageCount, inputSize.toLayer) dot w) + b)
   }
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
     val layer0 = convolutionThenRelu.compose(input)
-    //val layer1 = convolutionThenRelu.compose(layer0)
-    //val layer2 = maxPool.compose(layer0)
+    val layer1 = convolutionThenRelu.compose(layer0)
+    val layer2 = maxPool.compose(layer1)
 
 //    val layer3 = convolutionThenRelu.compose(layer2)
 //    val layer4 = convolutionThenRelu.compose(layer3)
 //    val layer5 = maxPool.compose(layer4)
 
-    //fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer2)
-    fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer0)
+    fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer2)
+//    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)
 
   }
 
@@ -197,7 +196,21 @@ object CNNs extends App {
     crossEntropyLossFunction.compose(score :: label :: hnilLayer)
   }
 
-  for (epic <- 0 until 5) {}
+  val trainNetwork = network
+
+//
+//  val random = new util.Random
+//
+//  for (epic <- 0 until 5) {
+//    val randomIndex = random
+//      .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+//      .toArray
+//    for (times <- 0 until 10000 / MiniBatchSize) {
+//      val thisindex =
+//        randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
+//      //train>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//    }
+//  }
 
   def assertClear(layer: Any): Unit = {
     layer match {
@@ -215,7 +228,7 @@ object CNNs extends App {
   }
 
   var lossSeq =
-    for (indexer <- 0 until 3000) yield {
+    for (_ <- 0 until 1000) yield {
       val trainNDArray :: label :: HNil =
         ReadCIFAR10ToNDArray.getSGDTrainNDArray(MiniBatchSize)
       val input =
@@ -223,16 +236,15 @@ object CNNs extends App {
       val expectResult = makeVectorized(label)
 
       assertClear(predictor)
-      val loss =
-        network.train(input :: expectResult :: HNil)
+      val loss = trainNetwork.train(input :: expectResult :: HNil)
       assertClear(predictor)
-      println(predictor)
+
       println(s"loss : $loss")
       loss
     }
   val plot = Seq(
     Scatter(
-      0 until 3000 by 1,
+      0 until 1000 by 1,
       lossSeq
     )
   )
