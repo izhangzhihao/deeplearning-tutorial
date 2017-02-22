@@ -9,8 +9,9 @@ import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
+import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning._
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
 import com.thoughtworks.deeplearning.Lift.Layers.Identity
 import com.thoughtworks.deeplearning.Lift._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -70,29 +71,11 @@ object CNNs extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  /**
-    * 处理标签数据：将N行一列的NDArray转换为N行NumberOfClasses列的NDArray，每行对应的正确分类的值为1，其它列的值为0
-    *
-    * @param ndArray 标签数据
-    * @return N行NumberOfClasses列的NDArray
-    */
-  def makeVectorized(ndArray: INDArray): INDArray = {
-    val shape = ndArray.shape()
-
-    val p = Nd4j.zeros(shape(0), NumberOfClasses)
-    for (i <- 0 until shape(0)) {
-      val double = ndArray.getDouble(i, 0)
-      val column = double.toInt
-      p.put(i, column, 1)
-    }
-    p
-  }
-
   val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
 
-  val test_p = makeVectorized(test_expect_result)
+  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
   val MiniBatchSize = 64
 
@@ -116,7 +99,7 @@ object CNNs extends App {
 
     val weight =
       (Nd4j.randn(Array(KernelNumber, Depth, KernelSize, KernelSize)) /
-        math.sqrt(KernelSize / 2.0)).toWeight //* 0.1
+        math.sqrt(KernelSize / 2.0)).toWeight * 0.1
     val bias = Nd4j.zeros(KernelNumber).toWeight
 
     val colRow = input.im2col(Array(KernelSize, KernelSize),
@@ -163,13 +146,26 @@ object CNNs extends App {
   }
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val layer0 = convolutionThenRelu.compose(input)
-    val layer1 = convolutionThenRelu.compose(layer0)
-    val layer2 = maxPool.compose(layer1)
 
-    fullyConnectedThenSoftmax(3 * 16 * 16, 10).compose(layer2)
-    //    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(layer0)，
+    @tailrec
+    def convFunction(times: Int, input2: To[INDArray]##T): To[INDArray]##T = {
+      if (times <= 0) {
+        input2
+      } else {
+        convFunction(
+          times - 1,
+          maxPool.compose(
+            convolutionThenRelu.compose(
+              convolutionThenRelu.compose(input2)
+            )
+          )
+        )
+      }
+    }
 
+    val recLayer = convFunction(3, input)
+
+    fullyConnectedThenSoftmax(3 * 4 * 4, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -200,11 +196,16 @@ object CNNs extends App {
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
       trainNDArray.reshape(MiniBatchSize, Depth, InputSize, InputSize)
-    val expectResult = makeVectorized(expectLabel)
+    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
 
     val loss = trainNetwork.train(input :: expectResult :: HNil)
-
     println(s"loss : $loss")
+
+    val accuracy: INDArray =
+      predictor.predict(test_data.reshape(100, Depth, InputSize, InputSize))
+    val right = Utils.getAccuracy(accuracy, test_expect_result)
+    println(s"the accuracy is $right %")
+
     loss
   }
 
@@ -220,51 +221,15 @@ object CNNs extends App {
     }
   }).flatten
 
-  val plot = Seq(
-    Scatter(
-      0 until 156 * 5,
-      lossSeq
-    )
-  )
+  val plot = Seq(Scatter(lossSeq.indices, lossSeq))
 
-  plot.plot(
-    title = "loss on time"
-  )
+  plot.plot(title = "loss on time")
 
-  val result =
+  val result: INDArray =
     predictor.predict(test_data.reshape(100, Depth, InputSize, InputSize))
   println(s"result: $result") //输出判断结果
 
-  /**
-    * 从一行INDArray中获得值最大的元素所在的列
-    *
-    * @param iNDArray
-    * @return
-    */
-  def findMaxItemIndex(iNDArray: INDArray): Int = {
-    val shape = iNDArray.shape()
-    val col = shape(1)
-    var maxValue = 0.0
-    var maxIndex = 0
-    for (index <- 0 until col) {
-      val itemValue = iNDArray.getDouble(0, index)
-      if (itemValue > maxValue) {
-        maxValue = itemValue
-        maxIndex = index
-      }
-    }
-    maxIndex
-  }
+  val right = Utils.getAccuracy(result, test_expect_result)
 
-  var right = 0
-
-  val shape = result.shape()
-  for (row <- 0 until shape(0)) {
-    val rowItem = result.getRow(row)
-    val index = findMaxItemIndex(rowItem)
-    if (index == test_expect_result.getDouble(row, 0)) {
-      right += 1
-    }
-  }
   println(s"the result is $right %")
 }
