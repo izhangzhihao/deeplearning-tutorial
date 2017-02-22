@@ -67,29 +67,11 @@ object TwoLayerNet extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  /**
-    * 处理标签数据：将N行一列的NDArray转换为N行NumberOfClasses列的NDArray，每行对应的正确分类的值为1，其它列的值为0
-    *
-    * @param ndArray 标签数据
-    * @return N行NumberOfClasses列的NDArray
-    */
-  def makeVectorized(ndArray: INDArray): INDArray = {
-    val shape = ndArray.shape()
-
-    val p = Nd4j.zeros(shape(0), NumberOfClasses)
-    for (i <- 0 until shape(0)) {
-      val double = ndArray.getDouble(i, 0)
-      val column = double.toInt
-      p.put(i, column, 1)
-    }
-    p
-  }
-
   val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
 
-  val test_p = makeVectorized(test_expect_result)
+  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
       implicit row: From[INDArray]##T): To[INDArray]##T = {
@@ -144,15 +126,13 @@ object TwoLayerNet extends App {
   val lossSeq = for (_ <- 0 until 2000) yield {
     val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
     val loss = network.train(
-      trainNDArray.head :: makeVectorized(trainNDArray.tail.head) :: HNil)
+      trainNDArray.head :: Utils.makeVectorized(trainNDArray.tail.head,
+                                                NumberOfClasses) :: HNil)
     println(loss)
     loss
   }
   val plot = Seq(
-    Scatter(
-      0 until 2000 by 1,
-      lossSeq
-    )
+    Scatter(lossSeq.indices, lossSeq)
   )
 
   plot.plot(
@@ -162,36 +142,6 @@ object TwoLayerNet extends App {
   val result = predictor.predict(test_data)
   println(s"result: $result") //输出判断结果
 
-  /**
-    * 从一行INDArray中获得值最大的元素所在的列
-    *
-    * @param iNDArray
-    * @return
-    */
-  def findMaxItemIndex(iNDArray: INDArray): Int = {
-    val shape = iNDArray.shape()
-    val col = shape(1)
-    var maxValue = 0.0
-    var maxIndex = 0
-    for (index <- 0 until col) {
-      val itemValue = iNDArray.getDouble(0, index)
-      if (itemValue > maxValue) {
-        maxValue = itemValue
-        maxIndex = index
-      }
-    }
-    maxIndex
-  }
-
-  var right = 0
-
-  val shape = result.shape()
-  for (row <- 0 until shape(0)) {
-    val rowItem = result.getRow(row)
-    val index = findMaxItemIndex(rowItem)
-    if (index == test_expect_result.getDouble(row, 0)) {
-      right += 1
-    }
-  }
+  val right = Utils.getAccuracy(result, test_expect_result)
   println(s"the result is $right %")
 }

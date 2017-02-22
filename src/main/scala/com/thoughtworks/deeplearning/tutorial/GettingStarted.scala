@@ -54,10 +54,7 @@ object GettingStarted extends App {
   }
 
   val plot = Seq(
-    Scatter(
-      0 until 2000 by 1,
-      lossSeq
-    )
+    Scatter(lossSeq.indices, lossSeq)
   )
 
   plot.plot(
