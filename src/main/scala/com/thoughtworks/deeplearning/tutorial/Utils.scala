@@ -27,26 +27,13 @@ object Utils {
   }
 
   /**
-    * 从一行INDArray中获得值最大的元素所在的列
+    * 二维INDArray中获得值最大的元素所在的列组成的INDArray
     *
     * @param iNDArray
     * @return
     */
-  def findMaxItemIndex(iNDArray: INDArray): Int = {
-    val shape = iNDArray.shape()
-    val col = shape(1)
-    var maxValue = 0.0
-    var maxIndex = 0
-    (0 until col).foreach { index =>
-      {
-        val itemValue = iNDArray.getDouble(0, index)
-        if (itemValue > maxValue) {
-          maxValue = itemValue
-          maxIndex = index
-        }
-      }
-    }
-    maxIndex
+  def findMaxItemIndex(iNDArray: INDArray): INDArray = {
+    Nd4j.argMax(iNDArray, 1)
   }
 
   /**
@@ -56,15 +43,15 @@ object Utils {
     * @return 准确率
     */
   def getAccuracy(result: INDArray, test_expect_result: INDArray): Double = {
-    var right = 0.0
-    val shape = result.shape()
-    for (row <- 0 until shape(0)) {
-      val rowItem = result.getRow(row)
-      val index = findMaxItemIndex(rowItem)
-      if (index == test_expect_result.getDouble(row, 0)) {
-        right += 1.0
-      }
+
+    val iNDArrayIndex = findMaxItemIndex(result)
+    val shape = iNDArrayIndex.shape
+    val acc = for (row <- 0 until shape(0)) yield {
+      if (iNDArrayIndex.getDouble(row, 0) ==
+            test_expect_result.getDouble(row, 0)) {
+        1.0
+      } else 0.0
     }
-    right
+    acc.sum
   }
 }
