@@ -78,11 +78,11 @@ object CNNs extends App {
 
   val MiniBatchSize = 64
 
-  val Depth = Seq(3, 64, 32, 16, 16)
+  val Depth = Seq(3, 4, 8, 16, 32)
 
   val InputSize = 32 // W 输入数据尺寸
 
-  val KernelNumber = Seq(64, 32, 16, 16) //卷积核的数量
+  val KernelNumber = Seq(4, 8, 16, 32) //卷积核的数量
 
   val Stride = 1 // 步长
 
@@ -101,14 +101,14 @@ object CNNs extends App {
 
     val weight =
       (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) /
-        math.sqrt(KernelSize / 2.0)).toWeight * 0.1
+        math.sqrt(kernelNumber)).toWeight * 0.1
 
     val bias = Nd4j.zeros(kernelNumber).toWeight
 
-    val colRow = input
-      .im2col(Array(KernelSize, KernelSize),
-              Array(Stride, Stride),
-              Array(Padding, Padding))
+    val colRow =
+      input.im2col(Array(KernelSize, KernelSize),
+                   Array(Stride, Stride),
+                   Array(Padding, Padding))
 
     val permuteCol = colRow.permute(0, 2, 3, 1, 4, 5)
 
@@ -143,11 +143,12 @@ object CNNs extends App {
       implicit input: From[INDArray]##T): To[INDArray]##T = {
     val imageCount = input.shape(0)
 
-    val w =
+    val weight =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
-    val b = Nd4j.zeros(outputSize).toWeight
+    val bias = Nd4j.zeros(outputSize).toWeight
 
-    softmax.compose((input.reshape(imageCount, inputSize.toLayer) dot w) + b)
+    softmax.compose(
+      (input.reshape(imageCount, inputSize.toLayer) dot weight) + bias)
   }
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
@@ -176,7 +177,7 @@ object CNNs extends App {
 
     val recLayer = convFunction(2, 0, input)
 
-    fullyConnectedThenSoftmax(16 * 8 * 8, 10).compose(recLayer)
+    fullyConnectedThenSoftmax(32 * 8 * 8, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -212,24 +213,24 @@ object CNNs extends App {
     val loss = trainNetwork.train(input :: expectResult :: HNil)
     println(s"loss : $loss")
 
-    val accuracy: INDArray =
-      predictor.predict(reshapedTestData)
-    val acc = Utils.getAccuracy(accuracy, test_expect_result) * 100
-    println(s"the accuracy is $acc %")
+    val result: INDArray = predictor.predict(input)
+    val acc = Utils.getAccuracy(result, expectLabel) * 100
+    println(s"the result is $acc %")
 
     (loss, acc)
   }
 
-  val resultTuple: Seq[(Double, Double)] = (for (epic <- 0 until 5) yield {
-    val randomIndex = random
-      .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
-      .toArray
-    for (times <- 0 until 10000 / MiniBatchSize) yield {
-      val randomIndexArray =
-        randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
-      trainData(randomIndexArray)
-    }
-  }).flatten
+  val resultTuple: Seq[(Double, Double)] =
+    (for (epic <- 0 until 5) yield {
+      val randomIndex = random
+        .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+        .toArray
+      for (times <- 0 until 10000 / MiniBatchSize) yield {
+        val randomIndexArray =
+          randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
+        trainData(randomIndexArray)
+      }
+    }).flatten
 
   val (lossSeq, accSeq) = resultTuple.unzip
 
