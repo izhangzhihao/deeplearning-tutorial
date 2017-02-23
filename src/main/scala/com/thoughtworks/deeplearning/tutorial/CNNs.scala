@@ -76,19 +76,21 @@ object CNNs extends App {
 
   val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
-  val MiniBatchSize = 32
+  val MiniBatchSize = 64
 
-  val Depth = Seq(3, 32, 16)
+  val Depth = Seq(3, 64, 32, 16, 16)
 
   val InputSize = 32 // W 输入数据尺寸
 
-  val KernelNumber = Seq(32, 16) //卷积核的数量
+  val KernelNumber = Seq(64, 32, 16, 16) //卷积核的数量
 
   val Stride = 1 // 步长
 
   val Padding = 1 //零填充数量
 
   val KernelSize = 3 //F 卷积核的空间尺寸
+
+  val reshapedTestData = test_data.reshape(100, 3, InputSize, InputSize)
 
   def convolutionThenRelu(depth: Int, kernelNumber: Int)(
       implicit input: From[INDArray]##T): To[INDArray]##T = {
@@ -151,25 +153,30 @@ object CNNs extends App {
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
 
     @tailrec
-    def convFunction(times: Int, input2: To[INDArray]##T): To[INDArray]##T = {
-      if (times <= 0) {
+    def convFunction(timesToRun: Int,
+                     timesNow: Int,
+                     input2: To[INDArray]##T): To[INDArray]##T = {
+      if (timesToRun <= 0) {
         input2
       } else {
         //noinspection ZeroIndexToHead
         convFunction(
-          times - 1,
+          timesToRun - 1,
+          timesNow + 1,
           maxPool.compose(
-            convolutionThenRelu(Depth(1), KernelNumber(1)).compose(
-              convolutionThenRelu(Depth(0), KernelNumber(0)).compose(input2)
+            convolutionThenRelu(Depth(timesNow * 2 + 1),
+                                KernelNumber(timesNow * 2 + 1)).compose(
+              convolutionThenRelu(Depth(timesNow * 2),
+                                  KernelNumber(timesNow * 2)).compose(input2)
             )
           )
         )
       }
     }
 
-    val recLayer = convFunction(1, input)
+    val recLayer = convFunction(2, 0, input)
 
-    fullyConnectedThenSoftmax(16 * 16 * 16, 10).compose(recLayer)
+    fullyConnectedThenSoftmax(16 * 8 * 8, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -195,7 +202,7 @@ object CNNs extends App {
 
   val random = new util.Random
 
-  def trainData(randomIndexArray: Array[Int]): Double = {
+  def trainData(randomIndexArray: Array[Int]): (Double, Double) = {
     val trainNDArray :: expectLabel :: shapeless.HNil =
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
@@ -206,14 +213,14 @@ object CNNs extends App {
     println(s"loss : $loss")
 
     val accuracy: INDArray =
-      predictor.predict(test_data.reshape(100, 3, InputSize, InputSize))
-    val right = Utils.getAccuracy(accuracy, test_expect_result)
-    println(s"the accuracy is $right %")
+      predictor.predict(reshapedTestData)
+    val acc = Utils.getAccuracy(accuracy, test_expect_result) * 100
+    println(s"the accuracy is $acc %")
 
-    loss
+    (loss, acc)
   }
 
-  val lossSeq: Seq[Double] = (for (epic <- 0 until 5) yield {
+  val resultTuple: Seq[(Double, Double)] = (for (epic <- 0 until 5) yield {
     val randomIndex = random
       .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
       .toArray
@@ -224,15 +231,18 @@ object CNNs extends App {
     }
   }).flatten
 
-  val plot = Seq(Scatter(lossSeq.indices, lossSeq))
+  val (lossSeq, accSeq) = resultTuple.unzip
 
-  plot.plot(title = "loss on time")
+  val plot = Seq(Scatter(resultTuple.indices, lossSeq, name = "loss"),
+                 Scatter(resultTuple.indices, accSeq, name = "acc"))
+
+  plot.plot(title = "loss,acc by time")
 
   val result: INDArray =
-    predictor.predict(test_data.reshape(100, 3, InputSize, InputSize))
+    predictor.predict(reshapedTestData)
   println(s"result: $result") //输出判断结果
 
-  val acc = Utils.getAccuracy(result, test_expect_result)
+  val acc = Utils.getAccuracy(result, test_expect_result) * 100
 
   println(s"the result is $acc %")
 }

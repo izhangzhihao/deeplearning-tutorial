@@ -45,13 +45,12 @@ object Utils {
   def getAccuracy(result: INDArray, test_expect_result: INDArray): Double = {
 
     val iNDArrayIndex = findMaxItemIndex(result)
-    val shape = iNDArrayIndex.shape
-    val acc = for (row <- 0 until shape(0)) yield {
+    val acc = for (row <- 0 until iNDArrayIndex.shape()(0)) yield {
       if (iNDArrayIndex.getDouble(row, 0) ==
             test_expect_result.getDouble(row, 0)) {
         1.0
       } else 0.0
     }
-    acc.sum
+    acc.sum / result.shape()(0)
   }
 }
