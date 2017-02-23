@@ -32,7 +32,6 @@ import shapeless._
 import plotly.Plotly._
 import plotly._
 import shapeless.OpticDefns.compose
-
 import scala.annotation.tailrec
 import scala.collection.immutable.IndexedSeq
 
@@ -77,48 +76,51 @@ object CNNs extends App {
 
   val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
-  val MiniBatchSize = 64
+  val MiniBatchSize = 32
 
-  val Depth = 3
+  val Depth = Seq(3, 32, 16)
 
   val InputSize = 32 // W 输入数据尺寸
 
-  val KernelNumber = 3 //卷积核的数量
+  val KernelNumber = Seq(32, 16) //卷积核的数量
 
-  def convolutionThenRelu(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  val Stride = 1 // 步长
+
+  val Padding = 1 //零填充数量
+
+  val KernelSize = 3 //F 卷积核的空间尺寸
+
+  def convolutionThenRelu(depth: Int, kernelNumber: Int)(
+      implicit input: From[INDArray]##T): To[INDArray]##T = {
     val imageCount = input.shape(0)
     val inputSize = input.shape(2)
-
-    val Stride = 1 // 步长
-
-    val Padding = 1 //零填充数量
-
-    val KernelSize = 3 //F 卷积核的空间尺寸
 
     val outputSize = inputSize
 
     val weight =
-      (Nd4j.randn(Array(KernelNumber, Depth, KernelSize, KernelSize)) /
+      (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) /
         math.sqrt(KernelSize / 2.0)).toWeight * 0.1
-    val bias = Nd4j.zeros(KernelNumber).toWeight
 
-    val colRow = input.im2col(Array(KernelSize, KernelSize),
-                              Array(Stride, Stride),
-                              Array(Padding, Padding))
+    val bias = Nd4j.zeros(kernelNumber).toWeight
+
+    val colRow = input
+      .im2col(Array(KernelSize, KernelSize),
+              Array(Stride, Stride),
+              Array(Padding, Padding))
 
     val permuteCol = colRow.permute(0, 2, 3, 1, 4, 5)
 
     val col2dRow = permuteCol.reshape(
       imageCount * outputSize * outputSize,
-      (Depth * KernelSize * KernelSize).toLayer)
+      (depth * KernelSize * KernelSize).toLayer)
 
     val reshapedW =
-      weight.reshape(KernelSize * KernelSize * Depth, KernelNumber)
+      weight.reshape(KernelSize * KernelSize * depth, kernelNumber)
 
     val res = max((col2dRow dot reshapedW) + bias, 0.0)
 
     val result =
-      res.reshape(imageCount, outputSize, outputSize, KernelNumber.toLayer)
+      res.reshape(imageCount, outputSize, outputSize, kernelNumber.toLayer)
 
     result.permute(0, 3, 1, 2)
   }
@@ -142,6 +144,7 @@ object CNNs extends App {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
+
     softmax.compose((input.reshape(imageCount, inputSize.toLayer) dot w) + b)
   }
 
@@ -152,20 +155,21 @@ object CNNs extends App {
       if (times <= 0) {
         input2
       } else {
+        //noinspection ZeroIndexToHead
         convFunction(
           times - 1,
           maxPool.compose(
-            convolutionThenRelu.compose(
-              convolutionThenRelu.compose(input2)
+            convolutionThenRelu(Depth(1), KernelNumber(1)).compose(
+              convolutionThenRelu(Depth(0), KernelNumber(0)).compose(input2)
             )
           )
         )
       }
     }
 
-    val recLayer = convFunction(3, input)
+    val recLayer = convFunction(1, input)
 
-    fullyConnectedThenSoftmax(3 * 4 * 4, 10).compose(recLayer)
+    fullyConnectedThenSoftmax(16 * 16 * 16, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -195,14 +199,14 @@ object CNNs extends App {
     val trainNDArray :: expectLabel :: shapeless.HNil =
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
-      trainNDArray.reshape(MiniBatchSize, Depth, InputSize, InputSize)
+      trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
     val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
 
     val loss = trainNetwork.train(input :: expectResult :: HNil)
     println(s"loss : $loss")
 
     val accuracy: INDArray =
-      predictor.predict(test_data.reshape(100, Depth, InputSize, InputSize))
+      predictor.predict(test_data.reshape(100, 3, InputSize, InputSize))
     val right = Utils.getAccuracy(accuracy, test_expect_result)
     println(s"the accuracy is $right %")
 
@@ -210,7 +214,6 @@ object CNNs extends App {
   }
 
   val lossSeq: Seq[Double] = (for (epic <- 0 until 5) yield {
-    System.gc()
     val randomIndex = random
       .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
       .toArray
@@ -226,10 +229,10 @@ object CNNs extends App {
   plot.plot(title = "loss on time")
 
   val result: INDArray =
-    predictor.predict(test_data.reshape(100, Depth, InputSize, InputSize))
+    predictor.predict(test_data.reshape(100, 3, InputSize, InputSize))
   println(s"result: $result") //输出判断结果
 
-  val right = Utils.getAccuracy(result, test_expect_result)
+  val acc = Utils.getAccuracy(result, test_expect_result)
 
-  println(s"the result is $right %")
+  println(s"the result is $acc %")
 }
