@@ -160,7 +160,6 @@ object CNNs extends App {
       if (timesToRun <= 0) {
         input2
       } else {
-        //noinspection ZeroIndexToHead
         convFunction(
           timesToRun - 1,
           timesNow + 1,
@@ -203,7 +202,7 @@ object CNNs extends App {
 
   val random = new util.Random
 
-  def trainData(randomIndexArray: Array[Int]): (Double, Double) = {
+  def trainData(randomIndexArray: Array[Int]): (Double, Double, Double) = {
     val trainNDArray :: expectLabel :: shapeless.HNil =
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
@@ -213,15 +212,19 @@ object CNNs extends App {
     val loss = trainNetwork.train(input :: expectResult :: HNil)
     println(s"loss : $loss")
 
-    val result: INDArray = predictor.predict(input)
-    val acc = Utils.getAccuracy(result, expectLabel) * 100
-    println(s"the result is $acc %")
+    val trainResult: INDArray = predictor.predict(input)
+    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel) * 100
+    println(s"the train predict result is $trainAccuracy %")
 
-    (loss, acc)
+    val testResult: INDArray = predictor.predict(reshapedTestData)
+    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result) * 100
+    println(s"the test predict result is $testAccuracy %")
+
+    (loss, trainAccuracy, testAccuracy)
   }
 
-  val resultTuple: Seq[(Double, Double)] =
-    (for (epic <- 0 until 5) yield {
+  val resultTuple: Seq[(Double, Double, Double)] =
+    (for (_ <- 0 until 5) yield {
       val randomIndex = random
         .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
         .toArray
@@ -232,18 +235,13 @@ object CNNs extends App {
       }
     }).flatten
 
-  val (lossSeq, accSeq) = resultTuple.unzip
+  val (lossSeq, trainAccuracySeq, testAccuracySeq) = resultTuple.unzip3
 
-  val plot = Seq(Scatter(resultTuple.indices, lossSeq, name = "loss"),
-                 Scatter(resultTuple.indices, accSeq, name = "acc"))
+  val plot = Seq(
+    Scatter(resultTuple.indices, lossSeq, name = "loss"),
+    Scatter(resultTuple.indices, trainAccuracySeq, name = "trainAccuracy"),
+    Scatter(resultTuple.indices, testAccuracySeq, name = "testAccuracy")
+  )
 
-  plot.plot(title = "loss,acc by time")
-
-  val result: INDArray =
-    predictor.predict(reshapedTestData)
-  println(s"result: $result") //输出判断结果
-
-  val acc = Utils.getAccuracy(result, test_expect_result) * 100
-
-  println(s"the result is $acc %")
+  plot.plot(title = "loss,trainAccuracy,testAccuracy by time")
 }
