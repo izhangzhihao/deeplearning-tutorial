@@ -3,6 +3,9 @@ package com.thoughtworks.deeplearning.tutorial
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 
+import scala.collection.GenTraversable
+import scala.collection.generic.GenericTraversableTemplate
+
 /**
   * Created by 张志豪 on 2017/2/22.
   */
@@ -51,6 +54,29 @@ object Utils {
         1.0
       } else 0.0
     }
-    acc.sum / result.shape()(0)
+    (acc.sum / result.shape()(0)) * 100
   }
+
+  class Unzipper[A, CC[X] <: GenTraversable[X]](
+      s: GenericTraversableTemplate[A, CC]) {
+    def unzip4[A1, A2, A3, A4](implicit asQuad: A => (A1, A2, A3, A4))
+      : (CC[A1], CC[A2], CC[A3], CC[A4]) = {
+      val b1 = s.genericBuilder[A1]
+      val b2 = s.genericBuilder[A2]
+      val b3 = s.genericBuilder[A3]
+      val b4 = s.genericBuilder[A4]
+      for (e <- s) {
+        val (a, b, c, d) = asQuad(e)
+        b1 += a
+        b2 += b
+        b3 += c
+        b4 += d
+      }
+      (b1.result, b2.result, b3.result, b4.result)
+    }
+  }
+
+  implicit def toUnzipper[A, CC[X] <: GenTraversable[X]](
+      s: GenericTraversableTemplate[A, CC]): Unzipper[A, CC] = new Unzipper(s)
+
 }

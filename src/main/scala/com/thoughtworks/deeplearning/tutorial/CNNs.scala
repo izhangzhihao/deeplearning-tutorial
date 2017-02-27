@@ -34,6 +34,7 @@ import plotly._
 import shapeless.OpticDefns.compose
 import scala.annotation.tailrec
 import scala.collection.immutable.IndexedSeq
+import Utils._
 
 /**
   * Created by 张志豪 on 2017/2/6.
@@ -44,9 +45,9 @@ object CNNs extends App {
     override def ndArrayOptimizer(
         weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
       new DifferentiableINDArray.Optimizers.L2Regularization {
-        override protected def l2Regularization = 0.03
+        override protected def l2Regularization = 0.0000003
 
-        var learningRate = 0.0001
+        var learningRate = 1.1
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -74,7 +75,8 @@ object CNNs extends App {
 
   val test_expect_result = testNDArray.tail.head
 
-  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val test_expect_label =
+    Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
   val MiniBatchSize = 64
 
@@ -101,9 +103,10 @@ object CNNs extends App {
 
     val weight =
       (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) /
-        math.sqrt(kernelNumber)).toWeight * 0.1
+        math.sqrt(kernelNumber)).toWeight * 0.05
 
-    val bias = Nd4j.zeros(kernelNumber).toWeight
+    //When using RELUs, make sure biases are initialised with small *positive* values for example 0.1
+    val bias = Nd4j.ones(kernelNumber).toWeight * 0.05
 
     val colRow =
       input.im2col(Array(KernelSize, KernelSize),
@@ -144,7 +147,7 @@ object CNNs extends App {
     val imageCount = input.shape(0)
 
     val weight =
-      (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
+      (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight * 0.1
     val bias = Nd4j.zeros(outputSize).toWeight
 
     softmax.compose(
@@ -152,7 +155,6 @@ object CNNs extends App {
   }
 
   def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
-
     @tailrec
     def convFunction(timesToRun: Int,
                      timesNow: Int,
@@ -188,17 +190,7 @@ object CNNs extends App {
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
   }
 
-  def network(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
-    val input = pair.head
-    val label = pair.tail.head
-    val score: To[INDArray]##T = predictor.compose(input)
-
-    val hnilLayer: To[HNil]##T = HNil
-    crossEntropyLossFunction.compose(score :: label :: hnilLayer)
-  }
-
-  val trainNetwork = network
+  val trainNetwork = crossEntropyLossFunction
 
   val random = new util.Random
 
@@ -209,22 +201,23 @@ object CNNs extends App {
       trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
     val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
 
-    val loss = trainNetwork.train(input :: expectResult :: HNil)
-    println(s"loss : $loss")
-
     val trainResult: INDArray = predictor.predict(input)
-    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel) * 100
-    println(s"the train predict result is $trainAccuracy %")
+    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
+
+    val trainLoss = trainNetwork.train(trainResult :: expectResult :: HNil)
 
     val testResult: INDArray = predictor.predict(reshapedTestData)
-    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result) * 100
-    println(s"the test predict result is $testAccuracy %")
+    //println(testResult)
+    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
 
-    (loss, trainAccuracy, testAccuracy)
+    println(
+      s"train accuracy : $trainAccuracy % ,\t\ttrain loss : $trainLoss ,\t\ttest accuracy : $testAccuracy %")
+
+    (trainLoss, trainAccuracy, testAccuracy)
   }
 
   val resultTuple: Seq[(Double, Double, Double)] =
-    (for (_ <- 0 until 5) yield {
+    (for (_ <- 0 until 1) yield {
       val randomIndex = random
         .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
         .toArray
@@ -235,13 +228,14 @@ object CNNs extends App {
       }
     }).flatten
 
-  val (lossSeq, trainAccuracySeq, testAccuracySeq) = resultTuple.unzip3
+  val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
+    resultTuple.unzip3
 
   val plot = Seq(
-    Scatter(resultTuple.indices, lossSeq, name = "loss"),
-    Scatter(resultTuple.indices, trainAccuracySeq, name = "trainAccuracy"),
-    Scatter(resultTuple.indices, testAccuracySeq, name = "testAccuracy")
+    Scatter(resultTuple.indices, trainLossSeq, name = "train loss"),
+    Scatter(resultTuple.indices, trainAccuracySeq, name = "train accuracy"),
+    Scatter(resultTuple.indices, testAccuracySeq, name = "test accuracy")
   )
 
-  plot.plot(title = "loss,trainAccuracy,testAccuracy by time")
+  plot.plot(title = "train loss,train accuracy,test accuracy by time")
 }
