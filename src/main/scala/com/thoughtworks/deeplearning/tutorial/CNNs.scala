@@ -47,7 +47,7 @@ object CNNs extends App {
       new DifferentiableINDArray.Optimizers.L2Regularization {
         override protected def l2Regularization = 0.0000003
 
-        var learningRate = 1.1
+        var learningRate = 0.01
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -97,45 +97,46 @@ object CNNs extends App {
   def convolutionThenRelu(depth: Int, kernelNumber: Int)(
       implicit input: From[INDArray]##T): To[INDArray]##T = {
     val imageCount = input.shape(0)
-    val inputSize = input.shape(2)
-
-    val outputSize = inputSize
+    val inputSizeX = input.shape(3)
+    val inputSizeY = input.shape(2)
 
     val weight =
-      (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) /
-        math.sqrt(kernelNumber)).toWeight * 0.05
-
+      (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) *
+        math.sqrt(2.0 / depth)).toWeight * 0.1
     //When using RELUs, make sure biases are initialised with small *positive* values for example 0.1
-    val bias = Nd4j.ones(kernelNumber).toWeight * 0.05
+    val bias = Nd4j.ones(kernelNumber).toWeight * 0.1
 
     val colRow =
-      input.im2col(Array(KernelSize, KernelSize),
-                   Array(Stride, Stride),
-                   Array(Padding, Padding))
+      input
+        .im2col(Array(KernelSize, KernelSize),
+                Array(Stride, Stride),
+                Array(Padding, Padding))
 
     val permuteCol = colRow.permute(0, 2, 3, 1, 4, 5)
 
     val col2dRow = permuteCol.reshape(
-      imageCount * outputSize * outputSize,
+      imageCount * inputSizeY * inputSizeX,
       (depth * KernelSize * KernelSize).toLayer)
 
     val reshapedW =
-      weight.reshape(KernelSize * KernelSize * depth, kernelNumber)
+      weight
+        .reshape(kernelNumber, KernelSize * KernelSize * depth)
+        .permute(1, 0)
 
     val res = max((col2dRow dot reshapedW) + bias, 0.0)
 
     val result =
-      res.reshape(imageCount, outputSize, outputSize, kernelNumber.toLayer)
+      res.reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
 
     result.permute(0, 3, 1, 2)
   }
 
-  def maxPool(implicit input: From[INDArray]##T): To[INDArray]##T = {
-    input
-      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
-      .permute(0, 1, 4, 5, 2, 3)
-      .maxPool(4, 5)
-  }
+  //  def maxPool(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  //    input
+  //      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
+  //      .permute(0, 1, 4, 5, 2, 3)
+  //      .maxPool(4, 5)
+  //  }
 
   def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
     val expScores = exp(scores)
@@ -147,7 +148,7 @@ object CNNs extends App {
     val imageCount = input.shape(0)
 
     val weight =
-      (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight * 0.1
+      (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     val bias = Nd4j.zeros(outputSize).toWeight
 
     softmax.compose(
@@ -165,20 +166,23 @@ object CNNs extends App {
         convFunction(
           timesToRun - 1,
           timesNow + 1,
-          maxPool.compose(
-            convolutionThenRelu(Depth(timesNow * 2 + 1),
-                                KernelNumber(timesNow * 2 + 1)).compose(
-              convolutionThenRelu(Depth(timesNow * 2),
-                                  KernelNumber(timesNow * 2)).compose(input2)
-            )
+          convolutionThenRelu(Depth(timesNow * 2 + 1),
+                              KernelNumber(timesNow * 2 + 1)).compose(
+            convolutionThenRelu(Depth(timesNow * 2),
+                                KernelNumber(timesNow * 2)).compose(input2)
           )
         )
       }
     }
 
-    val recLayer = convFunction(2, 0, input)
+    //    val recLayer = convFunction(0, 0, input)
+    //
+    //    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(recLayer)
 
-    fullyConnectedThenSoftmax(32 * 8 * 8, 10).compose(recLayer)
+    val layer0 = convolutionThenRelu(3, 8).compose(input)
+    val layer1 = convolutionThenRelu(8, 3).compose(layer0)
+    //    val layer2 = convolutionThenRelu(4, 1).compose(layer1)
+    fullyConnectedThenSoftmax(32 * 32 * 3, 10).compose(layer1)
   }
 
   val predictor = hiddenLayer
@@ -190,7 +194,15 @@ object CNNs extends App {
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
   }
 
-  val trainNetwork = crossEntropyLossFunction
+  def network(
+      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+    val input = pair.head
+    val label = pair.tail.head
+    val score: To[INDArray]##T = predictor.compose(input)
+    crossEntropyLossFunction.compose(score :: label :: HNil.toLayer)
+  }
+
+  val trainNetwork = network
 
   val random = new util.Random
 
@@ -199,16 +211,19 @@ object CNNs extends App {
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
       trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
+
     val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
-
-    val trainResult: INDArray = predictor.predict(input)
-    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
-
-    val trainLoss = trainNetwork.train(trainResult :: expectResult :: HNil)
+    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
 
     val testResult: INDArray = predictor.predict(reshapedTestData)
-    //println(testResult)
+
+    if (random.nextInt(20) == 10) {
+      println(testResult)
+    }
+
     val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
+
+    val trainAccuracy = 0
 
     println(
       s"train accuracy : $trainAccuracy % ,\t\ttrain loss : $trainLoss ,\t\ttest accuracy : $testAccuracy %")
@@ -217,7 +232,7 @@ object CNNs extends App {
   }
 
   val resultTuple: Seq[(Double, Double, Double)] =
-    (for (_ <- 0 until 1) yield {
+    (for (_ <- 0 until 5) yield {
       val randomIndex = random
         .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
         .toArray

@@ -1,5 +1,11 @@
 package com.thoughtworks.deeplearning.tutorial
 
+import com.thoughtworks.deeplearning.DifferentiableINDArray.{
+  INDArrayPlaceholder,
+  INDArraySemigroupBatch
+}
+import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.{BufferedLayer, Layer}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 
@@ -56,6 +62,38 @@ object Utils {
     }
     (acc.sum / result.shape()(0)) * 100
   }
+
+  final case class GetAccuracy[Input0 <: Batch](
+      operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+      operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
+  ) extends BufferedLayer.Binary {
+
+    type BufferedBatch =
+      INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
+
+    type Input = Input0
+
+    override protected def rawForward(input0: Input0): BufferedBatch = {
+      new {
+        override final val input = input0
+      } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
+
+        val value = ???
+
+        override protected def rawBackward(outputDelta: INDArray): Unit = {
+          ???
+        }
+      }
+    }
+  }
+
+//  final class INDArrayLayerOps[Input <: Batch](
+//      operand: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
+//    def getAccuracy(right: Layer.Aux[Input, INDArrayPlaceholder.Batch])
+//      : Layer.Aux[Input, DoublePlaceholder.Batch] = {
+//      GetAccuracy(operand, right)
+//    }
+//  }
 
   class Unzipper[A, CC[X] <: GenTraversable[X]](
       s: GenericTraversableTemplate[A, CC]) {
