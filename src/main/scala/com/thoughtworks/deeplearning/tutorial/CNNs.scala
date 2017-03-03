@@ -41,13 +41,16 @@ import Utils._
   */
 object CNNs extends App {
 
+  var isUpdateLearningRate = false
+
   implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
     override def ndArrayOptimizer(
         weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
       new DifferentiableINDArray.Optimizers.L2Regularization {
         override protected def l2Regularization = 0.0000003
 
-        var learningRate = 0.01
+        //var learningRate = 0.00003
+        var learningRate = 0.00004
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -55,7 +58,16 @@ object CNNs extends App {
 
         override def updateNDArray(oldValue: INDArray,
                                    delta: INDArray): INDArray = {
-          learningRate *= 0.9995
+          learningRate = if (isUpdateLearningRate) {
+            isUpdateLearningRate = false
+            println(
+              "setting isUpdateLearningRate to : " + isUpdateLearningRate)
+            println("before update learningRate : " + learningRate)
+            learningRate * 0.85
+          } else {
+            learningRate
+          }
+
           super.updateNDArray(oldValue, delta)
         }
       }
@@ -65,26 +77,28 @@ object CNNs extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
 
+  val NumberOfTestSize = 64
+
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
     ReadCIFAR10ToNDArray.readFromResource(
       "/cifar-10-batches-bin/test_batch.bin",
-      100)
+      NumberOfTestSize)
 
   val test_data = testNDArray.head
 
   val test_expect_result = testNDArray.tail.head
 
-  val test_expect_label =
+  val test_expect_vectorized =
     Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
   val MiniBatchSize = 64
 
-  val Depth = Seq(3, 4, 8, 16, 32)
+  val Depth = List.fill(17)(3)
 
   val InputSize = 32 // W 输入数据尺寸
 
-  val KernelNumber = Seq(4, 8, 16, 32) //卷积核的数量
+  val KernelNumber = List.fill(17)(3) //卷积核的数量
 
   val Stride = 1 // 步长
 
@@ -92,43 +106,25 @@ object CNNs extends App {
 
   val KernelSize = 3 //F 卷积核的空间尺寸
 
-  val reshapedTestData = test_data.reshape(100, 3, InputSize, InputSize)
+  val reshapedTestData =
+    test_data.reshape(NumberOfTestSize, 3, InputSize, InputSize)
 
-  def convolutionThenRelu(depth: Int, kernelNumber: Int)(
+  def convolutionThenRelu(numberOfInputKernels: Int,
+                          numberOfOutputKernels: Int)(
       implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val imageCount = input.shape(0)
-    val inputSizeX = input.shape(3)
-    val inputSizeY = input.shape(2)
-
-    val weight =
-      (Nd4j.randn(Array(kernelNumber, depth, KernelSize, KernelSize)) *
-        math.sqrt(2.0 / depth)).toWeight * 0.1
+    val weight: To[INDArray]##T =
+      (Nd4j.randn(
+        Array(numberOfOutputKernels,
+              numberOfInputKernels,
+              KernelSize,
+              KernelSize)) *
+        math.sqrt(2.0 / numberOfInputKernels / KernelSize / KernelSize)).toWeight
     //When using RELUs, make sure biases are initialised with small *positive* values for example 0.1
-    val bias = Nd4j.ones(kernelNumber).toWeight * 0.1
+    val bias = Nd4j.ones(numberOfOutputKernels).toWeight * 0.1
 
-    val colRow =
-      input
-        .im2col(Array(KernelSize, KernelSize),
-                Array(Stride, Stride),
-                Array(Padding, Padding))
-
-    val permuteCol = colRow.permute(0, 2, 3, 1, 4, 5)
-
-    val col2dRow = permuteCol.reshape(
-      imageCount * inputSizeY * inputSizeX,
-      (depth * KernelSize * KernelSize).toLayer)
-
-    val reshapedW =
-      weight
-        .reshape(kernelNumber, KernelSize * KernelSize * depth)
-        .permute(1, 0)
-
-    val res = max((col2dRow dot reshapedW) + bias, 0.0)
-
-    val result =
-      res.reshape(imageCount, inputSizeY, inputSizeX, kernelNumber.toLayer)
-
-    result.permute(0, 3, 1, 2)
+    val convResult =
+      input.convn(weight, bias, (3, 3), (1, 1), (1, 1))
+    max(convResult, 0.0)
   }
 
   //  def maxPool(implicit input: From[INDArray]##T): To[INDArray]##T = {
@@ -175,14 +171,9 @@ object CNNs extends App {
       }
     }
 
-    //    val recLayer = convFunction(0, 0, input)
-    //
-    //    fullyConnectedThenSoftmax(3 * 32 * 32, 10).compose(recLayer)
+    val recLayer = convFunction(8, 0, input)
 
-    val layer0 = convolutionThenRelu(3, 8).compose(input)
-    val layer1 = convolutionThenRelu(8, 3).compose(layer0)
-    //    val layer2 = convolutionThenRelu(4, 1).compose(layer1)
-    fullyConnectedThenSoftmax(32 * 32 * 3, 10).compose(layer1)
+    fullyConnectedThenSoftmax(32 * 32 * 3, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -207,41 +198,65 @@ object CNNs extends App {
   val random = new util.Random
 
   def trainData(randomIndexArray: Array[Int]): (Double, Double, Double) = {
-    val trainNDArray :: expectLabel :: shapeless.HNil =
-      ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
-    val input =
-      trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
+//    val trainNDArray :: expectLabel :: shapeless.HNil =
+//      ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
+//    val input =
+//      trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
+//
+//    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
+//    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
+//
+//    val trainResult: INDArray = predictor.predict(input)
+//
+//    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
+//
+//    val testResult: INDArray = predictor.predict(reshapedTestData)
+//
+//    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
 
-    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
-    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
+    val trainLoss =
+      trainNetwork.train(reshapedTestData :: test_expect_vectorized :: HNil)
+    val trainResult: INDArray = predictor.predict(reshapedTestData)
+    val trainAccuracy = Utils.getAccuracy(trainResult, test_expect_result)
+    val testAccuracy = 0
 
-    val testResult: INDArray = predictor.predict(reshapedTestData)
-
-    if (random.nextInt(20) == 10) {
-      println(testResult)
+    if (random.nextInt(20) == 2) {
+      println(trainResult)
     }
 
-    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
-
-    val trainAccuracy = 0
-
     println(
-      s"train accuracy : $trainAccuracy % ,\t\ttrain loss : $trainLoss ,\t\ttest accuracy : $testAccuracy %")
+      s"train accuracy : $trainAccuracy % ,\t\ttest accuracy : $testAccuracy % ,\t\ttrain loss : $trainLoss ")
 
     (trainLoss, trainAccuracy, testAccuracy)
   }
 
+//  val resultTuple: Seq[(Double, Double, Double)] =
+//    (
+//      for (blocks <- 0 until 5) yield {
+//        if (blocks % 5 == 0) {
+//          //一个epoch
+//          isUpdateLearningRate = true
+//        }
+//        val randomIndex = random
+//          .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+//          .toArray
+//        for (times <- 0 until 10000 / MiniBatchSize) yield {
+//          val randomIndexArray =
+//            randomIndex.slice(times * MiniBatchSize,
+//                              (times + 1) * MiniBatchSize)
+//          trainData(randomIndexArray)
+//        }
+//      }
+//    ).flatten
+
   val resultTuple: Seq[(Double, Double, Double)] =
-    (for (_ <- 0 until 5) yield {
-      val randomIndex = random
-        .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
-        .toArray
-      for (times <- 0 until 10000 / MiniBatchSize) yield {
-        val randomIndexArray =
-          randomIndex.slice(times * MiniBatchSize, (times + 1) * MiniBatchSize)
-        trainData(randomIndexArray)
+    for (indexer <- 0 until 1000) yield {
+      if (indexer % 100 == 0 && indexer != 0) {
+        isUpdateLearningRate = true
+        println("setting isUpdateLearningRate to : " + isUpdateLearningRate)
       }
-    }).flatten
+      trainData(Array(1))
+    }
 
   val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
     resultTuple.unzip3

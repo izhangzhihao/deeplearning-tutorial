@@ -11,6 +11,7 @@ import org.nd4j.linalg.factory.Nd4j
 
 import scala.collection.GenTraversable
 import scala.collection.generic.GenericTraversableTemplate
+import scala.reflect.ClassTag
 
 /**
   * Created by 张志豪 on 2017/2/22.
@@ -52,6 +53,8 @@ object Utils {
     * @return 准确率
     */
   def getAccuracy(result: INDArray, test_expect_result: INDArray): Double = {
+
+    assert(test_expect_result.shape().toSeq.last == 1)
 
     val iNDArrayIndex = findMaxItemIndex(result)
     val acc = for (row <- 0 until iNDArrayIndex.shape()(0)) yield {
@@ -116,5 +119,15 @@ object Utils {
 
   implicit def toUnzipper[A, CC[X] <: GenTraversable[X]](
       s: GenericTraversableTemplate[A, CC]): Unzipper[A, CC] = new Unzipper(s)
+
+  class Tuple2ToArray[A: ClassTag](tuple: (A, A)) {
+    def toArray: Array[A] = {
+      val (one: A, two: A) = tuple
+      Array(one, two)
+    }
+  }
+
+  implicit def tupleTwoToArray[A: ClassTag](tuple: (A, A)): Tuple2ToArray[A] =
+    new Tuple2ToArray[A](tuple)
 
 }
