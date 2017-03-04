@@ -32,9 +32,11 @@ import shapeless._
 import plotly.Plotly._
 import plotly._
 import shapeless.OpticDefns.compose
+
 import scala.annotation.tailrec
 import scala.collection.immutable.IndexedSeq
 import Utils._
+import org.joda.time.LocalTime
 
 /**
   * Created by 张志豪 on 2017/2/6.
@@ -63,7 +65,7 @@ object CNNs extends App {
             println(
               "setting isUpdateLearningRate to : " + isUpdateLearningRate)
             println("before update learningRate : " + learningRate)
-            learningRate * 0.85
+            learningRate * 0.9
           } else {
             learningRate
           }
@@ -77,7 +79,7 @@ object CNNs extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
 
-  val NumberOfTestSize = 64
+  val NumberOfTestSize = 50
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -198,31 +200,31 @@ object CNNs extends App {
   val random = new util.Random
 
   def trainData(randomIndexArray: Array[Int]): (Double, Double, Double) = {
-//    val trainNDArray :: expectLabel :: shapeless.HNil =
-//      ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
-//    val input =
-//      trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
-//
-//    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
-//    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
-//
-//    val trainResult: INDArray = predictor.predict(input)
-//
-//    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
-//
-//    val testResult: INDArray = predictor.predict(reshapedTestData)
-//
-//    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
+    val trainNDArray :: expectLabel :: shapeless.HNil =
+      ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
+    val input =
+      trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
 
-    val trainLoss =
-      trainNetwork.train(reshapedTestData :: test_expect_vectorized :: HNil)
-    val trainResult: INDArray = predictor.predict(reshapedTestData)
-    val trainAccuracy = Utils.getAccuracy(trainResult, test_expect_result)
-    val testAccuracy = 0
+    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
+    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
 
-    if (random.nextInt(20) == 2) {
-      println(trainResult)
-    }
+    val trainResult: INDArray = predictor.predict(input)
+
+    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
+
+    val testResult: INDArray = predictor.predict(reshapedTestData)
+
+    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
+
+//    val trainLoss =
+//      trainNetwork.train(reshapedTestData :: test_expect_vectorized :: HNil)
+//    val trainResult: INDArray = predictor.predict(reshapedTestData)
+//    val trainAccuracy = Utils.getAccuracy(trainResult, test_expect_result)
+//    val testAccuracy = 0
+//
+//    if (random.nextInt(20) == 2) {
+//      println(trainResult)
+//    }
 
     println(
       s"train accuracy : $trainAccuracy % ,\t\ttest accuracy : $testAccuracy % ,\t\ttrain loss : $trainLoss ")
@@ -230,33 +232,40 @@ object CNNs extends App {
     (trainLoss, trainAccuracy, testAccuracy)
   }
 
-//  val resultTuple: Seq[(Double, Double, Double)] =
-//    (
-//      for (blocks <- 0 until 5) yield {
-//        if (blocks % 5 == 0) {
-//          //一个epoch
-//          isUpdateLearningRate = true
-//        }
-//        val randomIndex = random
-//          .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
-//          .toArray
-//        for (times <- 0 until 10000 / MiniBatchSize) yield {
-//          val randomIndexArray =
-//            randomIndex.slice(times * MiniBatchSize,
-//                              (times + 1) * MiniBatchSize)
-//          trainData(randomIndexArray)
-//        }
-//      }
-//    ).flatten
+  val startTime = LocalTime.now()
 
   val resultTuple: Seq[(Double, Double, Double)] =
-    for (indexer <- 0 until 1000) yield {
-      if (indexer % 100 == 0 && indexer != 0) {
-        isUpdateLearningRate = true
-        println("setting isUpdateLearningRate to : " + isUpdateLearningRate)
+    (
+      for (blocks <- 0 until 5) yield {
+        if (blocks != 0) { //blocks % 5 == 0 &&
+          //一个epoch
+          isUpdateLearningRate = true
+        }
+        val randomIndex = random
+          .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+          .toArray
+        for (times <- 0 until 10000 / MiniBatchSize) yield {
+          val randomIndexArray =
+            randomIndex.slice(times * MiniBatchSize,
+                              (times + 1) * MiniBatchSize)
+          trainData(randomIndexArray)
+        }
       }
-      trainData(Array(1))
-    }
+    ).flatten
+
+  val endTime = LocalTime.now()
+
+  println(
+    "start at :" + startTime.toString() + "; end at :" + endTime.toString())
+
+//  val resultTuple: Seq[(Double, Double, Double)] =
+//    for (indexer <- 0 until 1000) yield {
+//      if (indexer % 100 == 0 && indexer != 0) {
+//        isUpdateLearningRate = true
+//        println("setting isUpdateLearningRate to : " + isUpdateLearningRate)
+//      }
+//      trainData(Array(1))
+//    }
 
   val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
     resultTuple.unzip3
