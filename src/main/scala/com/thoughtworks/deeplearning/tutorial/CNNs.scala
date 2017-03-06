@@ -52,7 +52,7 @@ object CNNs extends App {
         override protected def l2Regularization = 0.0000003
 
         //var learningRate = 0.00003
-        var learningRate = 0.00004
+        var learningRate = 0.00005
 
         override protected def currentLearningRate(): Double = {
           learningRate
@@ -79,7 +79,7 @@ object CNNs extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
 
-  val NumberOfTestSize = 50
+  val NumberOfTestSize = 20
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -87,12 +87,12 @@ object CNNs extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       NumberOfTestSize)
 
-  val test_data = testNDArray.head
+  val testData = testNDArray.head
 
-  val test_expect_result = testNDArray.tail.head
+  val testExpectLabel = testNDArray.tail.head
 
-  val test_expect_vectorized =
-    Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val testExpectLabelVectorized =
+    Utils.makeVectorized(testExpectLabel, NumberOfClasses)
 
   val MiniBatchSize = 64
 
@@ -109,7 +109,7 @@ object CNNs extends App {
   val KernelSize = 3 //F 卷积核的空间尺寸
 
   val reshapedTestData =
-    test_data.reshape(NumberOfTestSize, 3, InputSize, InputSize)
+    testData.reshape(NumberOfTestSize, 3, InputSize, InputSize)
 
   def convolutionThenRelu(numberOfInputKernels: Int,
                           numberOfOutputKernels: Int)(
@@ -205,16 +205,18 @@ object CNNs extends App {
     val input =
       trainNDArray.reshape(MiniBatchSize, 3, InputSize, InputSize)
 
-    val expectResult = Utils.makeVectorized(expectLabel, NumberOfClasses)
-    val trainLoss = trainNetwork.train(input :: expectResult :: HNil)
+    val expectLabelVectorized =
+      Utils.makeVectorized(expectLabel, NumberOfClasses)
+    val trainLoss = trainNetwork.train(input :: expectLabelVectorized :: HNil)
 
-    val trainResult: INDArray = predictor.predict(input)
-
-    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
+//    val trainResult: INDArray = predictor.predict(input)
+//
+//    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
+    val trainAccuracy = 0
 
     val testResult: INDArray = predictor.predict(reshapedTestData)
 
-    val testAccuracy = Utils.getAccuracy(testResult, test_expect_result)
+    val testAccuracy = Utils.getAccuracy(testResult, testExpectLabel)
 
 //    val trainLoss =
 //      trainNetwork.train(reshapedTestData :: test_expect_vectorized :: HNil)
@@ -236,8 +238,8 @@ object CNNs extends App {
 
   val resultTuple: Seq[(Double, Double, Double)] =
     (
-      for (blocks <- 0 until 5) yield {
-        if (blocks != 0) { //blocks % 5 == 0 &&
+      for (blocks <- 0 until 50) yield {
+        if (blocks % 5 == 0 && blocks != 0) {
           //一个epoch
           isUpdateLearningRate = true
         }
