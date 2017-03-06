@@ -1,13 +1,11 @@
 package com.thoughtworks.deeplearning.tutorial
 
-import com.thoughtworks.deeplearning.DifferentiableINDArray.{
-  INDArrayPlaceholder,
-  INDArraySemigroupBatch
-}
+import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.{BufferedLayer, Layer}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4s.Implicits._
 
 import scala.collection.GenTraversable
 import scala.collection.generic.GenericTraversableTemplate
@@ -48,22 +46,26 @@ object Utils {
 
   /**
     * 计算准确率
-    * @param result 预测结果
-    * @param test_expect_result 期望结果
+    * @param score 预测结果
+    * @param testExpectLabel 期望结果
     * @return 准确率
     */
-  def getAccuracy(result: INDArray, test_expect_result: INDArray): Double = {
-
-    assert(test_expect_result.shape().toSeq.last == 1)
-
-    val iNDArrayIndex = findMaxItemIndex(result)
-    val acc = for (row <- 0 until iNDArrayIndex.shape()(0)) yield {
-      if (iNDArrayIndex.getDouble(row, 0) ==
-            test_expect_result.getDouble(row, 0)) {
-        1.0
-      } else 0.0
-    }
-    (acc.sum / result.shape()(0)) * 100
+  def getAccuracy(score: INDArray, testExpectLabel: INDArray): Double = {
+    val scoreIndex = findMaxItemIndex(score)
+    if (testExpectLabel.shape().toSeq.last == 1) { //not vectorized
+      val acc = for (row <- 0 until scoreIndex.shape()(0)) yield {
+        if (scoreIndex.getDouble(row, 0) ==
+              testExpectLabel.getDouble(row, 0)) {
+          1.0
+        } else 0.0
+      }
+      (acc.sum / score.shape()(0)) * 100
+    } else if (testExpectLabel.shape().toSeq.last == 10) { //vectorized
+      val expectResultIndex = findMaxItemIndex(testExpectLabel)
+      val accINDArray = scoreIndex.eq(expectResultIndex)
+      (accINDArray.sumT / score.shape()(0)) * 100
+    } else
+      throw new IllegalArgumentException("Unacceptable testExpectLabel")
   }
 
   final case class GetAccuracy[Input0 <: Batch](
