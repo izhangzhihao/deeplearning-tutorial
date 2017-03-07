@@ -36,6 +36,7 @@ import shapeless.OpticDefns.compose
 import scala.annotation.tailrec
 import scala.collection.immutable.IndexedSeq
 import Utils._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight
 import org.joda.time.LocalTime
 
 /**
@@ -46,31 +47,25 @@ object CNNs extends App {
   var isUpdateLearningRate = false
 
   implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-    override def ndArrayOptimizer(
-        weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
-      new DifferentiableINDArray.Optimizers.L2Regularization {
-        override protected def l2Regularization = 0.0000003
+    override def ndArrayOptimizer(weight: Weight): Optimizer = {
 
-        //var learningRate = 0.00003
+      new LearningRate with L2Regularization with Adam {
+
         var learningRate = 0.00005
 
-        override protected def currentLearningRate(): Double = {
-          learningRate
-        }
+        override protected def l2Regularization: Double = 0.0003
 
-        override def updateNDArray(oldValue: INDArray,
-                                   delta: INDArray): INDArray = {
+        override protected def currentLearningRate(): Double = {
           learningRate = if (isUpdateLearningRate) {
             isUpdateLearningRate = false
             println(
               "setting isUpdateLearningRate to : " + isUpdateLearningRate)
             println("before update learningRate : " + learningRate)
-            learningRate * 0.9
+            learningRate * 0.75
           } else {
             learningRate
           }
-
-          super.updateNDArray(oldValue, delta)
+          learningRate
         }
       }
     }
