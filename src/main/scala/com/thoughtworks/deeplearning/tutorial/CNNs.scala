@@ -178,7 +178,7 @@ object CNNs extends App {
       implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
     val score = pair.head
     val label = pair.tail.head
-    -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
+    -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).mean
   }
 
   def network(
@@ -202,7 +202,7 @@ object CNNs extends App {
 
     val expectLabelVectorized =
       Utils.makeVectorized(expectLabel, NumberOfClasses)
-    val trainLoss = trainNetwork.train(input :: expectLabelVectorized :: HNil) / (MiniBatchSize * 32 * 32 * 3)
+    val trainLoss = trainNetwork.train(input :: expectLabelVectorized :: HNil)
 
     if (isComputeAccuracy) {
       val trainResult: INDArray = predictor.predict(input)

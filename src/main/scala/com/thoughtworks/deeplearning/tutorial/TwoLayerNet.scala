@@ -6,6 +6,7 @@ import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.{
   DifferentiableHList,
@@ -38,22 +39,17 @@ import plotly._
 object TwoLayerNet extends App {
 
   implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
-    override def ndArrayOptimizer(
-        weight: DifferentiableINDArray.Layers.Weight): L2Regularization = {
-      new DifferentiableINDArray.Optimizers.L2Regularization {
-        override protected def l2Regularization = 0.03
+    override def ndArrayOptimizer(weight: Weight): Optimizer = {
+      new LearningRate with L2Regularization {
 
         var learningRate = 0.001
 
         override protected def currentLearningRate(): Double = {
+          learningRate *= 0.9995
           learningRate
         }
 
-        override def updateNDArray(oldValue: INDArray,
-                                   delta: INDArray): INDArray = {
-          learningRate *= 0.9995
-          super.updateNDArray(oldValue, delta)
-        }
+        override protected def l2Regularization: Double = 0.03
       }
     }
   }
