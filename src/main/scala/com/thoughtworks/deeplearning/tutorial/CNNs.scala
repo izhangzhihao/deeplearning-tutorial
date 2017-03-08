@@ -44,22 +44,21 @@ import org.joda.time.LocalTime
   */
 object CNNs extends App {
 
-  var isUpdateLearningRate = false
+  var isAEpochDone = false
 
   implicit val optimizerFactory = new DifferentiableINDArray.OptimizerFactory {
     override def ndArrayOptimizer(weight: Weight): Optimizer = {
 
-      new LearningRate with L2Regularization with Adam {
+      new LearningRate with L2Regularization with Adam { //NesterovMomentum
 
-        var learningRate = 0.00005
+        var learningRate = 0.00003
 
-        override protected def l2Regularization: Double = 0.0003
+        override protected def l2Regularization: Double = 0.00003
 
         override protected def currentLearningRate(): Double = {
-          learningRate = if (isUpdateLearningRate) {
-            isUpdateLearningRate = false
-            println(
-              "setting isUpdateLearningRate to : " + isUpdateLearningRate)
+          learningRate = if (isAEpochDone) {
+            isAEpochDone = false
+            println("setting isUpdateLearningRate to : " + isAEpochDone)
             println("before update learningRate : " + learningRate)
             learningRate * 0.75
           } else {
@@ -74,7 +73,7 @@ object CNNs extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
 
-  val NumberOfTestSize = 20
+  val NumberOfTestSize = 100
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -194,7 +193,8 @@ object CNNs extends App {
 
   val random = new util.Random
 
-  def trainData(randomIndexArray: Array[Int]): (Double, Double, Double) = {
+  def trainData(randomIndexArray: Array[Int],
+                isComputeAccuracy: Boolean): (Double, Double, Double) = {
     val trainNDArray :: expectLabel :: shapeless.HNil =
       ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
     val input =
@@ -202,41 +202,33 @@ object CNNs extends App {
 
     val expectLabelVectorized =
       Utils.makeVectorized(expectLabel, NumberOfClasses)
-    val trainLoss = trainNetwork.train(input :: expectLabelVectorized :: HNil)
+    val trainLoss = trainNetwork.train(input :: expectLabelVectorized :: HNil) / (MiniBatchSize * 32 * 32 * 3)
 
-//    val trainResult: INDArray = predictor.predict(input)
-//
-//    val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel)
-    val trainAccuracy = 0
+    if (isComputeAccuracy) {
+      val trainResult: INDArray = predictor.predict(input)
 
-    val testResult: INDArray = predictor.predict(reshapedTestData)
+      val trainAccuracy = Utils.getAccuracy(trainResult, expectLabel) / 100
 
-    val testAccuracy = Utils.getAccuracy(testResult, testExpectLabel)
+      val testResult: INDArray = predictor.predict(reshapedTestData)
 
-//    val trainLoss =
-//      trainNetwork.train(reshapedTestData :: test_expect_vectorized :: HNil)
-//    val trainResult: INDArray = predictor.predict(reshapedTestData)
-//    val trainAccuracy = Utils.getAccuracy(trainResult, test_expect_result)
-//    val testAccuracy = 0
-//
-//    if (random.nextInt(20) == 2) {
-//      println(trainResult)
-//    }
-
-    println(
-      s"train accuracy : $trainAccuracy % ,\t\ttest accuracy : $testAccuracy % ,\t\ttrain loss : $trainLoss ")
-
-    (trainLoss, trainAccuracy, testAccuracy)
+      val testAccuracy = Utils.getAccuracy(testResult, testExpectLabel) / 100
+      println(
+        s"train accuracy : $trainAccuracy ,\t\ttest accuracy : $testAccuracy ,\t\ttrain loss : $trainLoss ")
+      (trainLoss, trainAccuracy, testAccuracy)
+    } else {
+      println(s"train loss : $trainLoss ")
+      (trainLoss, 0, 0)
+    }
   }
 
   val startTime = LocalTime.now()
 
   val resultTuple: Seq[(Double, Double, Double)] =
     (
-      for (blocks <- 0 until 50) yield {
+      for (blocks <- 0 to 50) yield {
         if (blocks % 5 == 0 && blocks != 0) {
           //一个epoch
-          isUpdateLearningRate = true
+          isAEpochDone = true
         }
         val randomIndex = random
           .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
@@ -245,7 +237,7 @@ object CNNs extends App {
           val randomIndexArray =
             randomIndex.slice(times * MiniBatchSize,
                               (times + 1) * MiniBatchSize)
-          trainData(randomIndexArray)
+          trainData(randomIndexArray, isAEpochDone)
         }
       }
     ).flatten
@@ -267,10 +259,22 @@ object CNNs extends App {
   val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
     resultTuple.unzip3
 
+  val filteredTrainAccuracySeq = 0.0 +: trainAccuracySeq.filter(item =>
+    item != 0)
+
+  val filteredTestAccuracySeq = 0.0 +: testAccuracySeq.filter(item =>
+    item != 0)
+
+  val interval = 5 * 10000 / MiniBatchSize
+
   val plot = Seq(
-    Scatter(resultTuple.indices, trainLossSeq, name = "train loss"),
-    Scatter(resultTuple.indices, trainAccuracySeq, name = "train accuracy"),
-    Scatter(resultTuple.indices, testAccuracySeq, name = "test accuracy")
+    Scatter(trainLossSeq.indices, trainLossSeq, name = "train loss"),
+    Scatter(trainLossSeq.indices by interval,
+            filteredTrainAccuracySeq,
+            name = "train accuracy"),
+    Scatter(trainLossSeq.indices by interval,
+            filteredTestAccuracySeq,
+            name = "test accuracy")
   )
 
   plot.plot(title = "train loss,train accuracy,test accuracy by time")
