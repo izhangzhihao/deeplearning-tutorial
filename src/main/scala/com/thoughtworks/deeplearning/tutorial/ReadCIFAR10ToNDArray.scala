@@ -1,12 +1,16 @@
 package com.thoughtworks.deeplearning.tutorial
 
-import java.io.{FileInputStream, InputStream}
+import java.io._
+import java.net.URL
+import java.util.zip.GZIPInputStream
 
+import sys.process._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
+import org.rauschig.jarchivelib.{Archiver, ArchiverFactory}
 import shapeless._
 
 import scala.collection.immutable.IndexedSeq
@@ -21,12 +25,19 @@ object ReadCIFAR10ToNDArray {
     */
   lazy val originalFileBytesArray: Array[Array[Byte]] = {
     for (fileIndex <- 1 to 5) yield {
-      //if you are using IDE
-      //val inputStream = getClass.getResourceAsStream("/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
 
-      //if you are using jupyter notebook,please use this
-      val inputStream = new FileInputStream(sys
-        .env("PWD") + "/src/main/resources" + "/cifar-10-batches-bin/data_batch_" + fileIndex + ".bin")
+      val currentPath = new java.io.File(".").getCanonicalPath + "/src/main/resources/"
+
+      val fileName = currentPath + "/cifar-10-batches-bin" + "/data_batch_" + fileIndex + ".bin"
+
+      if (!new File(fileName).exists()) {
+        downloadDataAndUnzipIfNotExist(
+          "http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz",
+          currentPath,
+          "cifar-10-binary.tar.gz"
+        )
+      }
+      val inputStream = new FileInputStream(fileName)
       readFromInputStream(inputStream)
     }
   }.toArray
@@ -76,6 +87,24 @@ object ReadCIFAR10ToNDArray {
   }
 
   /**
+    * 数据集不存在的话下载并解压
+    * @param path
+    * @param url
+    * @param fileName
+    */
+  def downloadDataAndUnzipIfNotExist(url: String,
+                                     path: String,
+                                     fileName: String): Unit = {
+    println("downloading data...")
+    val result = new URL(url) #> new File(path + fileName) !!
+
+    println("unzip file...")
+    val archiver: Archiver = ArchiverFactory.createArchiver("tar", "gz")
+    archiver.extract(new File(path + fileName), new File(path))
+    println("download and unzip done.")
+  }
+
+  /**
     * 从CIFAR10文件中读图片和其对应的标签
     *
     * @param fileName CIFAR10文件名
@@ -84,11 +113,20 @@ object ReadCIFAR10ToNDArray {
     */
   def readFromResource(fileName: String,
                        count: Int): INDArray :: INDArray :: HNil = {
-    //if you are using IDE
-    val inputStream = getClass.getResourceAsStream(fileName)
 
-    //if you are using jupyter notebook,please use this
-    //val inputStream = new FileInputStream(sys.env("PWD") + "/src/main/resources" + fileName)
+    val currentPath = new java.io.File(".").getCanonicalPath + "/src/main/resources/"
+
+    val filePathName = currentPath + fileName
+
+    if (!new File(filePathName).exists()) {
+      downloadDataAndUnzipIfNotExist(
+        "http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz",
+        currentPath,
+        "cifar-10-binary.tar.gz"
+      )
+    }
+
+    val inputStream = new FileInputStream(filePathName)
     try {
       val bytes = Array.range(0, 3073 * count).map(_.toByte)
       inputStream.read(bytes)

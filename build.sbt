@@ -24,6 +24,8 @@ libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarra
 
 libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.0"
 
+libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0"
+
 addCompilerPlugin(
   "com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "latest.release")
 
