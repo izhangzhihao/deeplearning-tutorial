@@ -22,7 +22,7 @@ libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablecoprodu
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarray" % deepLearningScalaVersion
 
-libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.0"
+libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.1"
 
 libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0"
 
