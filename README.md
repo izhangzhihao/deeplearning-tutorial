@@ -1,4 +1,4 @@
-# Tutorial of DeepLearning.scala [![Build Status](https://travis-ci.org/izhangzhihao/deeplearning-tutorial.svg?branch=master)](https://travis-ci.org/izhangzhihao/deeplearning-tutorial)
+# Tutorial of DeepLearning.scala [![Build Status](https://travis-ci.org/izhangzhihao/deeplearning-tutorial.svg?branch=master)](https://travis-ci.org/izhangzhihao/deeplearning-tutorial) [![Build status](https://ci.appveyor.com/api/projects/status/fvxjskxa9oqwqpel/branch/master?svg=true)](https://ci.appveyor.com/project/izhangzhihao/deeplearning-tutorial/branch/master)
 
 **DeepLearning.scala** is a DSL for creating complex neural networks.
 
