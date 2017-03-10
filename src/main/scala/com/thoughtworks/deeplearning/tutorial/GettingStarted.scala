@@ -5,9 +5,10 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathOps
+import com.thoughtworks.deeplearning.Symbolic
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -28,9 +29,9 @@ object GettingStarted extends App {
   val predictionResult: INDArray = myNeuralNetwork.predict(input)
 
   def createMyNeuralNetwork(
-      implicit input: From[INDArray]##T): To[INDArray]##T = {
+      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val initialValueOfWeight = Nd4j.randn(3, 1)
-    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
+    val weight: Symbolic[INDArray]##T = initialValueOfWeight.toWeight
     input dot weight
   }
 
@@ -39,7 +40,7 @@ object GettingStarted extends App {
   }
 
   def lossFunction(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     abs(myNeuralNetwork.compose(input) - expectedOutput).sum

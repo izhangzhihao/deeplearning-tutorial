@@ -1,17 +1,12 @@
 package com.thoughtworks.deeplearning.tutorial
-import com.thoughtworks.deeplearning.DifferentiableINDArray
+import com.thoughtworks.deeplearning.{DifferentiableINDArray, Symbolic}
 import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableHList._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Layers.Weight
-import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.{
-  L2Regularization,
-  LearningRate,
-  NesterovMomentum,
-  Optimizer
-}
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers.{L2Regularization, LearningRate, NesterovMomentum, Optimizer}
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly._
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -41,26 +36,26 @@ object Star extends App {
   }
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
+      implicit row: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def sigmoid(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  def sigmoid(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     1.0 / (exp(-input) + 1.0)
   }
 
   def fullyConnectedThenSigmoid(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
+      implicit row: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight
     sigmoid.compose((row dot w) + b)
   }
 
-  def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  def hiddenLayer(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val layer0 = fullyConnectedThenRelu(2, 10).compose(input)
     val layer1 = fullyConnectedThenRelu(10, 10).compose(layer0)
     val layer2 = fullyConnectedThenRelu(10, 10).compose(layer1)
@@ -70,18 +65,18 @@ object Star extends App {
   val predictor = hiddenLayer
 
   def crossEntropy(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val score = pair.head
     val label = pair.tail.head
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
   }
 
   def network(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val input = pair.head
     val label = pair.tail.head
-    val score: To[INDArray]##T = predictor.compose(input)
-    val hnilLayer: To[HNil]##T = HNil
+    val score: Symbolic[INDArray]##T = predictor.compose(input)
+    val hnilLayer: Symbolic[HNil]##T = HNil
     crossEntropy.compose(score :: label :: hnilLayer)
   }
 

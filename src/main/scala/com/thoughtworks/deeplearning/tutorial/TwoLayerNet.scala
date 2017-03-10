@@ -11,11 +11,12 @@ import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.{
   DifferentiableHList,
   DifferentiableINDArray,
-  Layer
+  Layer,
+  Symbolic
 }
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift.Layers.Identity
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods./
 import com.thoughtworks.deeplearning.Poly.MathOps
@@ -70,27 +71,28 @@ object TwoLayerNet extends App {
   val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
+      implicit row: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight * 0.1
     val b = Nd4j.zeros(outputSize).toWeight
     max((row dot w) + b, 0.0)
   }
 
-  def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
+  def softmax(implicit scores: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
   def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
-      implicit row: From[INDArray]##T): To[INDArray]##T = {
+      implicit row: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val w =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight //* 0.1
     val b = Nd4j.zeros(outputSize).toWeight
     softmax.compose((row dot w) + b)
   }
 
-  def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  def hiddenLayer(
+      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val layer0 = fullyConnectedThenRelu(3072, 500).compose(input)
     fullyConnectedThenSoftmax(500, 10).compose(layer0)
   }
@@ -101,19 +103,19 @@ object TwoLayerNet extends App {
 //    def currentLearningRate() = 0.0001
 //  }
 
-  def crossEntropy(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+  def crossEntropy(implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T)
+    : Symbolic[Double]##T = {
     val score = pair.head
     val label = pair.tail.head
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
   }
 
-  def network(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+  def network(implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T)
+    : Symbolic[Double]##T = {
     val input = pair.head
     val label = pair.tail.head
-    val score: To[INDArray]##T = predictor.compose(input)
-    val hnilLayer: To[HNil]##T = HNil
+    val score: Symbolic[INDArray]##T = predictor.compose(input)
+    val hnilLayer: Symbolic[HNil]##T = HNil
     crossEntropy.compose(score :: label :: hnilLayer)
   }
 

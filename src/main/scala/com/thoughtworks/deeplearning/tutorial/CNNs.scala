@@ -12,8 +12,8 @@ import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
-import com.thoughtworks.deeplearning.Lift.Layers.Identity
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods.{*, /}
 import com.thoughtworks.deeplearning.Poly.MathOps
@@ -107,8 +107,8 @@ object CNNs extends App {
 
   def convolutionThenRelu(numberOfInputKernels: Int,
                           numberOfOutputKernels: Int)(
-      implicit input: From[INDArray]##T): To[INDArray]##T = {
-    val weight: To[INDArray]##T =
+      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+    val weight: Symbolic[INDArray]##T =
       (Nd4j.randn(
         Array(numberOfOutputKernels,
               numberOfInputKernels,
@@ -123,20 +123,20 @@ object CNNs extends App {
     max(convResult, 0.0)
   }
 
-  //  def maxPool(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  //  def maxPool(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
   //    input
   //      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
   //      .permute(0, 1, 4, 5, 2, 3)
   //      .maxPool(4, 5)
   //  }
 
-  def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
+  def softmax(implicit scores: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
   def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
-      implicit input: From[INDArray]##T): To[INDArray]##T = {
+      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val imageCount = input.shape(0)
 
     val weight =
@@ -147,11 +147,11 @@ object CNNs extends App {
       (input.reshape(imageCount, inputSize.toLayer) dot weight) + bias)
   }
 
-  def hiddenLayer(implicit input: From[INDArray]##T): To[INDArray]##T = {
+  def hiddenLayer(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     @tailrec
     def convFunction(timesToRun: Int,
                      timesNow: Int,
-                     input2: To[INDArray]##T): To[INDArray]##T = {
+                     input2: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
       if (timesToRun <= 0) {
         input2
       } else {
@@ -175,17 +175,17 @@ object CNNs extends App {
   val predictor = hiddenLayer
 
   def crossEntropyLossFunction(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val score = pair.head
     val label = pair.tail.head
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).mean
   }
 
   def network(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val input = pair.head
     val label = pair.tail.head
-    val score: To[INDArray]##T = predictor.compose(input)
+    val score: Symbolic[INDArray]##T = predictor.compose(input)
     crossEntropyLossFunction.compose(score :: label :: HNil.toLayer)
   }
 

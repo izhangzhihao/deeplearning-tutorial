@@ -7,14 +7,10 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.{
-  DifferentiableHList,
-  DifferentiableINDArray,
-  Layer
-}
+import com.thoughtworks.deeplearning.{DifferentiableHList, DifferentiableINDArray, Layer, Symbolic}
 import com.thoughtworks.deeplearning.Layer.Batch
-import com.thoughtworks.deeplearning.Lift.Layers.Identity
-import com.thoughtworks.deeplearning.Lift._
+import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
+import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods./
 import com.thoughtworks.deeplearning.Poly.MathOps
@@ -55,8 +51,8 @@ object Debug extends App {
   val p = Utils.makeVectorized(train_expect_result, NumberOfClasses)
   val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
-  def softmax(implicit scores: From[INDArray]##T): To[INDArray]##T = {
-    val expScores: To[INDArray]##T = exp(scores)
+  def softmax(implicit scores: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+    val expScores: Symbolic[INDArray]##T = exp(scores)
       .withOutputDataHook { data =>
         println(data)
       }
@@ -64,21 +60,21 @@ object Debug extends App {
   }
 
   def createMyNeuralNetwork(
-      implicit input: From[INDArray]##T): To[INDArray]##T = {
+      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
     val initialValueOfWeight = Nd4j.randn(3072, NumberOfClasses) * 0.001
-    val weight: To[INDArray]##T = initialValueOfWeight.toWeight
-    val result: To[INDArray]##T = input dot weight
+    val weight: Symbolic[INDArray]##T = initialValueOfWeight.toWeight
+    val result: Symbolic[INDArray]##T = input dot weight
     softmax.compose(result) //对结果调用softmax方法，压缩结果值在0到1之间方便处理
   }
 
-  val myNeuralNetwork: FromTo[INDArray, INDArray]##T = createMyNeuralNetwork
+  val myNeuralNetwork: LayerOf[INDArray, INDArray]##T = createMyNeuralNetwork
 
   implicit def optimizer: Optimizer = new LearningRate {
     def currentLearningRate() = 0.00001
   }
 
   def lossFunction(
-      implicit pair: From[INDArray :: INDArray :: HNil]##T): To[Double]##T = {
+      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)
