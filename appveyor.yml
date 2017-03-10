@@ -1,0 +1,47 @@
+environment:
+  global:
+    COMPILE: compile
+    TEST_COMPILE: test:compile
+    IT_TEST_COMPILE: it:compile
+    TEST_SUITE: test
+    IT_TEST_SUITE: "it:testOnly -- -l NoWindows"
+  matrix:
+    - SCALA_VERSION: 2.10.6
+    - SCALA_VERSION: 2.11.8
+    - SCALA_VERSION: 2.12.1
+install:
+  - ps: |
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+      if (!(Test-Path -Path "C:\sbt\sbt-launcher-packaging-0.13.13" )) {
+        (new-object System.Net.WebClient).DownloadFile(
+          'https://dl.bintray.com/sbt/native-packages/sbt/0.13.13/sbt-0.13.13.zip',
+          'C:\sbt-0.13.13.zip'
+        )
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\sbt-0.13.13.zip", "C:\sbt")
+      }
+  - ps: |
+      if (!(Test-Path -Path "C:\Program Files\Java\jdk1.8.0\src.zip")) {
+        (new-object System.Net.WebClient).DownloadFile(
+          'https://github.com/fommil/openjdk8src/raw/master/src.zip',
+          'C:\Program Files\Java\jdk1.8.0\src.zip'
+        )
+      }
+  - cmd: SET JAVA_HOME=C:\Program Files\Java\jdk1.8.0
+  - cmd: SET PATH=C:\sbt\sbt-launcher-packaging-0.13.13\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET COURSIER_VERBOSITY=-1
+  - cmd: SET SBT_OPTS=-Xss2m -Xms1024m -Xmx4096m -XX:+TieredCompilation -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:MaxPermSize=256m -XX:ReservedCodeCacheSize=256M
+  - cmd: SET SCALATEST_SPAN_SCALE_FACTOR=20
+  - cmd: SET SBT_TASK_LIMIT=2
+  - cmd: SET SCALATEST_PARALLEL_TESTS=2
+  - cmd: SET SCALATEST_SLEEP_SCALE_FACTOR=2.0
+build_script:
+  - sbt ";+++ %SCALA_VERSION% %COMPILE% ;+++ %SCALA_VERSION% %TEST_COMPILE% ;+++ %SCALA_VERSION% %IT_TEST_COMPILE%"
+test_script:
+  - sbt ";+++ %SCALA_VERSION% %TEST_SUITE% ;+++ %SCALA_VERSION% %IT_TEST_SUITE%"
+cache:
+  - C:\Program Files\Java\jdk1.8.0\src.zip
+  - C:\sbt\sbt-launcher-packaging-0.13.13
+  - C:\Users\appveyor\.ivy2 -> appveyor.yml
+  - C:\Users\appveyor\.coursier -> appveyor.yml
+on_finish:
+  - ps: Get-ChildItem -Path .\* -Include *.log,*.hprof -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
