@@ -8,7 +8,7 @@ environment:
   matrix:
     - SCALA_VERSION: 2.10.6
     - SCALA_VERSION: 2.11.8
-    - SCALA_VERSION: 2.12.1
+    # - SCALA_VERSION: 2.12.1
 install:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -35,9 +35,10 @@ install:
   - cmd: SET SCALATEST_PARALLEL_TESTS=2
   - cmd: SET SCALATEST_SLEEP_SCALE_FACTOR=2.0
 build_script:
-  - sbt ";+++ %SCALA_VERSION% %COMPILE% ;+++ %SCALA_VERSION% %TEST_COMPILE% ;+++ %SCALA_VERSION% %IT_TEST_COMPILE%"
-test_script:
-  - sbt ";+++ %SCALA_VERSION% %TEST_SUITE% ;+++ %SCALA_VERSION% %IT_TEST_SUITE%"
+  - sbt ";++ %SCALA_VERSION% %COMPILE%"
+  # - sbt ";+++ %SCALA_VERSION% %COMPILE% ;+++ %SCALA_VERSION% %TEST_COMPILE% ;+++ %SCALA_VERSION% %IT_TEST_COMPILE%"
+# test_script:
+  # - sbt ";+++ %SCALA_VERSION% %TEST_SUITE% ;+++ %SCALA_VERSION% %IT_TEST_SUITE%"
 cache:
   - C:\Program Files\Java\jdk1.8.0\src.zip
   - C:\sbt\sbt-launcher-packaging-0.13.13
