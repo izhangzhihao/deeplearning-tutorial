@@ -7,7 +7,12 @@ import com.thoughtworks.deeplearning.DifferentiableDouble._
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.{DifferentiableHList, DifferentiableINDArray, Layer, Symbolic}
+import com.thoughtworks.deeplearning.{
+  DifferentiableHList,
+  DifferentiableINDArray,
+  Layer,
+  Symbolic
+}
 import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
@@ -44,27 +49,27 @@ object MiniBatchGradientDescent extends App {
 
   val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
 
-  def softmax(implicit scores: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+  def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
   def createMyNeuralNetwork(
-      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+      implicit input: INDArray @Symbolic): INDArray @Symbolic = {
     val initialValueOfWeight = Nd4j.randn(3072, NumberOfClasses) * 0.001
-    val weight: Symbolic[INDArray]##T = initialValueOfWeight.toWeight
-    val result: Symbolic[INDArray]##T = input dot weight
+    val weight: INDArray @Symbolic = initialValueOfWeight.toWeight
+    val result: INDArray @Symbolic = input dot weight
     softmax.compose(result) //对结果调用softmax方法，压缩结果值在0到1之间方便处理
   }
 
-  val myNeuralNetwork: LayerOf[INDArray, INDArray]##T = createMyNeuralNetwork
+  val myNeuralNetwork = createMyNeuralNetwork
 
   implicit def optimizer: Optimizer = new LearningRate {
     def currentLearningRate() = 0.00001
   }
 
-  def lossFunction(
-      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
+  def lossFunction(implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
+    : Double @Symbolic = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)

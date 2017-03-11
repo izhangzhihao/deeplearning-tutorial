@@ -107,8 +107,8 @@ object CNNs extends App {
 
   def convolutionThenRelu(numberOfInputKernels: Int,
                           numberOfOutputKernels: Int)(
-      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
-    val weight: Symbolic[INDArray]##T =
+      implicit input: INDArray @Symbolic): INDArray @Symbolic = {
+    val weight: INDArray @Symbolic =
       (Nd4j.randn(
         Array(numberOfOutputKernels,
               numberOfInputKernels,
@@ -123,20 +123,20 @@ object CNNs extends App {
     max(convResult, 0.0)
   }
 
-  //  def maxPool(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+  //  def maxPool(implicit input: INDArray @Symbolic): INDArray @Symbolic = {
   //    input
   //      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
   //      .permute(0, 1, 4, 5, 2, 3)
   //      .maxPool(4, 5)
   //  }
 
-  def softmax(implicit scores: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+  def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
   }
 
   def fullyConnectedThenSoftmax(inputSize: Int, outputSize: Int)(
-      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+      implicit input: INDArray @Symbolic): INDArray @Symbolic = {
     val imageCount = input.shape(0)
 
     val weight =
@@ -147,11 +147,11 @@ object CNNs extends App {
       (input.reshape(imageCount, inputSize.toLayer) dot weight) + bias)
   }
 
-  def hiddenLayer(implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+  def hiddenLayer(implicit input: INDArray @Symbolic): INDArray @Symbolic = {
     @tailrec
     def convFunction(timesToRun: Int,
                      timesNow: Int,
-                     input2: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+                     input2: INDArray @Symbolic): INDArray @Symbolic = {
       if (timesToRun <= 0) {
         input2
       } else {
@@ -175,17 +175,18 @@ object CNNs extends App {
   val predictor = hiddenLayer
 
   def crossEntropyLossFunction(
-      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
+      implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
+    : Double @Symbolic = {
     val score = pair.head
     val label = pair.tail.head
     -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).mean
   }
 
-  def network(
-      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
+  def network(implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
+    : Double @Symbolic = {
     val input = pair.head
     val label = pair.tail.head
-    val score: Symbolic[INDArray]##T = predictor.compose(input)
+    val score: INDArray @Symbolic = predictor.compose(input)
     crossEntropyLossFunction.compose(score :: label :: HNil.toLayer)
   }
 

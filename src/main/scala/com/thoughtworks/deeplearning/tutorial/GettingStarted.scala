@@ -22,16 +22,16 @@ import plotly._
   */
 object GettingStarted extends App {
 
-  val myNeuralNetwork: (INDArray <=> INDArray)##T = createMyNeuralNetwork
+  val myNeuralNetwork = createMyNeuralNetwork
 
   val input: INDArray =
     Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
   val predictionResult: INDArray = myNeuralNetwork.predict(input)
 
   def createMyNeuralNetwork(
-      implicit input: Symbolic[INDArray]##T): Symbolic[INDArray]##T = {
+      implicit input: INDArray @Symbolic): INDArray @Symbolic = {
     val initialValueOfWeight = Nd4j.randn(3, 1)
-    val weight: Symbolic[INDArray]##T = initialValueOfWeight.toWeight
+    val weight: INDArray @Symbolic = initialValueOfWeight.toWeight
     input dot weight
   }
 
@@ -39,8 +39,8 @@ object GettingStarted extends App {
     def currentLearningRate() = 0.001
   }
 
-  def lossFunction(
-      implicit pair: Symbolic[INDArray :: INDArray :: HNil]##T): Symbolic[Double]##T = {
+  def lossFunction(implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
+    : Double @Symbolic = {
     val input = pair.head
     val expectedOutput = pair.tail.head
     abs(myNeuralNetwork.compose(input) - expectedOutput).sum
