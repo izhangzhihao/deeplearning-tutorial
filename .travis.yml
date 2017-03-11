@@ -1,36 +1,18 @@
-language: java
-os:
-  - osx
-env:
-  - SCALA_VERSION=2.11.8
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" = "osx" ]]; then
-      brew update;
-      brew install xz;
-    fi
-script:
-  - ./sbt ++$SCALA_VERSION --warn update compile test:compile
-  - ./sbt ++$SCALA_VERSION test "scripted universal/* jar/* bash/* ash/*"
-  - if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
-      ./sbt ++$SCALA_VERSION "scripted rpm/* debian/* docker/staging docker/entrypoint docker/ports docker/volumes";
-    fi
-  - if [[ "$TRAVIS_JDK_VERSION" = "oraclejdk8" ]]; then
-      ./sbt ++$SCALA_VERSION "scripted jdkpackager/test-package-minimal jdkpackager/test-package-mappings";
-    fi
-addons:
-  apt:
-    packages:
-    - rpm
-matrix:
-  include:
-    - os: linux
-      jdk: openjdk8
-    - os: linux
-      jdk: oraclejdk8
-
 sudo: false
+
+language: scala
+
+jdk:
+  - oraclejdk8
+
+before_cache:
+  - find $HOME/.sbt -name '*.lock' -delete
+  - find $HOME/.ivy2 -name 'ivydata-*.properties' -delete
+
 cache:
- apt: true
- directories:
- - $HOME/.sbt
- - $HOME/.ivy2
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
+script:
+  - sbt compile
