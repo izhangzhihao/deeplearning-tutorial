@@ -12,6 +12,7 @@ import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
 import com.thoughtworks.deeplearning.Layer.Batch.Aux
 import com.thoughtworks.deeplearning._
 import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
+import com.thoughtworks.deeplearning.Poly.MathFunctions.{exp, log, max}
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -25,8 +26,6 @@ import org.nd4j.linalg.factory.Nd4j.PadMode.EDGE
 import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 import org.nd4s.Implicits._
-import plotly.Scatter
-import shapeless._
 import plotly.Scatter
 import shapeless._
 import plotly.Plotly._
@@ -119,7 +118,7 @@ object CNNs extends App {
     val bias = Nd4j.ones(numberOfOutputKernels).toWeight * 0.1
 
     val convResult =
-      input.convn(weight, bias, (3, 3), (1, 1), (1, 1))
+      conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     max(convResult, 0.0)
   }
 
