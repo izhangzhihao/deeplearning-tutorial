@@ -9,9 +9,9 @@ import com.thoughtworks.deeplearning.DifferentiableAny._
 import com.thoughtworks.deeplearning.DifferentiableInt._
 import com.thoughtworks.deeplearning.DifferentiableSeq._
 import com.thoughtworks.deeplearning.DifferentiableINDArray.Optimizers._
-import com.thoughtworks.deeplearning.Layer.Batch.Aux
+import com.thoughtworks.deeplearning.Layer.Tape.Aux
 import com.thoughtworks.deeplearning._
-import com.thoughtworks.deeplearning.Layer.{Aux, Batch}
+import com.thoughtworks.deeplearning.Layer.{Aux, Tape}
 import com.thoughtworks.deeplearning.Poly.MathFunctions.{exp, log, max}
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
