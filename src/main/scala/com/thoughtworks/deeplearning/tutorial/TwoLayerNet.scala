@@ -34,6 +34,8 @@ import shapeless._
 import plotly.Plotly._
 import plotly._
 
+import scala.util.Random
+
 /**
   * Created by 张志豪 on 2017/2/6.
   */
@@ -68,7 +70,8 @@ object TwoLayerNet extends App {
 
   val testExpectResult = testNDArray.tail.head
 
-  val vectorizedTestExpectResult = Utils.makeVectorized(testExpectResult, NumberOfClasses)
+  val vectorizedTestExpectResult =
+    Utils.makeVectorized(testExpectResult, NumberOfClasses)
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
       implicit row: INDArray @Symbolic): INDArray @Symbolic = {
@@ -116,14 +119,34 @@ object TwoLayerNet extends App {
 
   val trainer = network
 
-  val lossSeq = for (_ <- 0 until 2000) yield {
-    val trainNDArray = ReadCIFAR10ToNDArray.getSGDTrainNDArray(256)
-    val loss = network.train(
-      trainNDArray.head :: Utils.makeVectorized(trainNDArray.tail.head,
-                                                NumberOfClasses) :: HNil)
-    println(loss)
-    loss
-  }
+  val random = new Random
+
+  val MiniBatchSize = 256
+
+  val lossSeq =
+    (
+      for (_ <- 0 to 50) yield {
+        val randomIndex = random
+          .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+          .toArray
+        for (times <- 0 until 10000 / MiniBatchSize) yield {
+          val randomIndexArray =
+            randomIndex.slice(times * MiniBatchSize,
+                              (times + 1) * MiniBatchSize)
+          val trainNDArray :: expectLabel :: shapeless.HNil =
+            ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
+          val input =
+            trainNDArray.reshape(MiniBatchSize, 3072)
+
+          val expectLabelVectorized =
+            Utils.makeVectorized(expectLabel, NumberOfClasses)
+          val loss = trainer.train(input :: expectLabelVectorized :: HNil)
+          println(loss)
+          loss
+        }
+      }
+    ).flatten
+
   val plot = Seq(
     Scatter(lossSeq.indices, lossSeq)
   )
