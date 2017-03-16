@@ -13,7 +13,7 @@ import com.thoughtworks.deeplearning.{
   Layer,
   Symbolic
 }
-import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -43,11 +43,11 @@ object MiniBatchGradientDescent extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  val test_data = testNDArray.head
+  val testData = testNDArray.head
 
-  val test_expect_result = testNDArray.tail.head
+  val testExpectResult = testNDArray.tail.head
 
-  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val vectorizedTestExpectResult = Utils.makeVectorized(testExpectResult, NumberOfClasses)
 
   def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores = exp(scores)
@@ -74,7 +74,7 @@ object MiniBatchGradientDescent extends App {
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)
 
-    -(expectedOutput * log(probabilities)).sum //此处和准备一节中的交叉熵损失对应
+    -(expectedOutput * log(probabilities)).mean //此处和准备一节中的交叉熵损失对应
   }
 
   val lossSeq = for (_ <- 0 until 2000) yield {
@@ -90,12 +90,12 @@ object MiniBatchGradientDescent extends App {
   )
 
   plot.plot(
-    title = "loss on time"
+    title = "loss by time"
   )
 
-  val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(testData)
   println(s"result: $result") //输出判断结果
 
-  val right = Utils.getAccuracy(result, test_expect_result)
+  val right = Utils.getAccuracy(result, testExpectResult)
   println(s"the result is $right %")
 }

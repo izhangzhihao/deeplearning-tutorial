@@ -14,7 +14,7 @@ import com.thoughtworks.deeplearning.{
   Layer,
   Symbolic
 }
-import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -64,11 +64,11 @@ object TwoLayerNet extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  val test_data = testNDArray.head
+  val testData = testNDArray.head
 
-  val test_expect_result = testNDArray.tail.head
+  val testExpectResult = testNDArray.tail.head
 
-  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val vectorizedTestExpectResult = Utils.makeVectorized(testExpectResult, NumberOfClasses)
 
   def fullyConnectedThenRelu(inputSize: Int, outputSize: Int)(
       implicit row: INDArray @Symbolic): INDArray @Symbolic = {
@@ -98,15 +98,11 @@ object TwoLayerNet extends App {
 
   val predictor = hiddenLayer
 
-//  implicit def optimizer: Optimizer = new LearningRate {
-//    def currentLearningRate() = 0.0001
-//  }
-
   def crossEntropy(implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
     : Double @Symbolic = {
     val score = pair.head
     val label = pair.tail.head
-    -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).sum
+    -(label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9)).mean
   }
 
   def network(implicit pair: (INDArray :: INDArray :: HNil) @Symbolic)
@@ -133,12 +129,12 @@ object TwoLayerNet extends App {
   )
 
   plot.plot(
-    title = "loss on time"
+    title = "loss by time"
   )
 
-  val result = predictor.predict(test_data)
+  val result = predictor.predict(testData)
   println(s"result: $result") //输出判断结果
 
-  val right = Utils.getAccuracy(result, test_expect_result)
+  val right = Utils.getAccuracy(result, testExpectResult)
   println(s"the result is $right %")
 }

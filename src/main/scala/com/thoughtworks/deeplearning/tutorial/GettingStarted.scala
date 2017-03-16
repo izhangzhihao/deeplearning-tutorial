@@ -59,7 +59,7 @@ object GettingStarted extends App {
   )
 
   plot.plot(
-    title = "loss on time"
+    title = "loss by time"
   )
 
   // The loss should be close to zero

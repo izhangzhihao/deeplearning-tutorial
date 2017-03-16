@@ -13,7 +13,7 @@ import com.thoughtworks.deeplearning.{
   Layer,
   Symbolic
 }
-import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
@@ -49,14 +49,14 @@ object SoftmaxLinearClassifier extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  val train_data = trainNDArray.head
-  val test_data = testNDArray.head
+  val trainData = trainNDArray.head
+  val testData = testNDArray.head
 
-  val train_expect_result = trainNDArray.tail.head
-  val test_expect_result = testNDArray.tail.head
+  val trainExpectResult = trainNDArray.tail.head
+  val testExpectResult = testNDArray.tail.head
 
-  val p = Utils.makeVectorized(train_expect_result, NumberOfClasses)
-  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val vectorizedTrainExpectResult = Utils.makeVectorized(trainExpectResult, NumberOfClasses)
+  val vectorizedTestExpectResult = Utils.makeVectorized(testExpectResult, NumberOfClasses)
 
   def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores = exp(scores)
@@ -82,11 +82,11 @@ object SoftmaxLinearClassifier extends App {
     val expectedOutput = pair.tail.head
     val probabilities = myNeuralNetwork.compose(input)
 
-    -(expectedOutput * log(probabilities)).sum //此处和准备一节中的交叉熵损失对应
+    -(expectedOutput * log(probabilities)).mean //此处和准备一节中的交叉熵损失对应
   }
 
   val lossSeq = for (_ <- 0 until 2000) yield {
-    val loss = lossFunction.train(train_data :: p :: HNil)
+    val loss = lossFunction.train(trainData :: vectorizedTrainExpectResult :: HNil)
     println(loss)
     loss
   }
@@ -96,13 +96,13 @@ object SoftmaxLinearClassifier extends App {
   )
 
   plot.plot(
-    title = "loss on time"
+    title = "loss by time"
   )
 
-  val result = myNeuralNetwork.predict(test_data)
+  val result = myNeuralNetwork.predict(testData)
   println(s"result: $result") //输出判断结果
 
-  val right = Utils.getAccuracy(result, test_expect_result)
+  val right = Utils.getAccuracy(result, testExpectResult)
   println(s"the result is $right %")
 
 }

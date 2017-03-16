@@ -1,7 +1,7 @@
 package com.thoughtworks.deeplearning.tutorial
 
 import com.thoughtworks.deeplearning.DifferentiableINDArray._
-import com.thoughtworks.deeplearning.Layer.Tape
+import com.thoughtworks.deeplearning.Layer.Batch
 import com.thoughtworks.deeplearning.{BufferedLayer, Layer}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -68,20 +68,20 @@ object Utils {
       throw new IllegalArgumentException("Unacceptable testExpectLabel")
   }
 
-  final case class GetAccuracy[Input0 <: Tape](
-      operand1: Layer.Aux[Input0, INDArrayPlaceholder.Tape],
-      operand2: Layer.Aux[Input0, INDArrayPlaceholder.Tape]
+  final case class GetAccuracy[Input0 <: Batch](
+      operand1: Layer.Aux[Input0, INDArrayPlaceholder.Batch],
+      operand2: Layer.Aux[Input0, INDArrayPlaceholder.Batch]
   ) extends BufferedLayer.Binary {
 
-    type BufferedTape =
-      INDArraySemigroupTape with SemigroupTape with BinaryTape
+    type BufferedBatch =
+      INDArraySemigroupBatch with SemigroupBatch with BinaryBatch
 
     type Input = Input0
 
-    override protected def rawForward(input0: Input0): BufferedTape = {
+    override protected def rawForward(input0: Input0): BufferedBatch = {
       new {
         override final val input = input0
-      } with INDArraySemigroupTape with SemigroupTape with BinaryTape {
+      } with INDArraySemigroupBatch with SemigroupBatch with BinaryBatch {
 
         val value = ???
 
@@ -92,10 +92,10 @@ object Utils {
     }
   }
 
-//  final class INDArrayLayerOps[Input <: Tape](
-//      operand: Layer.Aux[Input, INDArrayPlaceholder.Tape]) {
-//    def getAccuracy(right: Layer.Aux[Input, INDArrayPlaceholder.Tape])
-//      : Layer.Aux[Input, DoublePlaceholder.Tape] = {
+//  final class INDArrayLayerOps[Input <: Batch](
+//      operand: Layer.Aux[Input, INDArrayPlaceholder.Batch]) {
+//    def getAccuracy(right: Layer.Aux[Input, INDArrayPlaceholder.Batch])
+//      : Layer.Aux[Input, DoublePlaceholder.Batch] = {
 //      GetAccuracy(operand, right)
 //    }
 //  }
