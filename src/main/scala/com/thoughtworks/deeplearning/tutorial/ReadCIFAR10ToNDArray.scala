@@ -88,10 +88,12 @@ object ReadCIFAR10ToNDArray {
 
   /**
     * 数据集不存在的话下载并解压
+ *
     * @param path
     * @param url
     * @param fileName
     */
+  //noinspection ScalaUnusedSymbol
   def downloadDataAndUnzipIfNotExist(url: String,
                                      path: String,
                                      fileName: String): Unit = {
@@ -176,53 +178,6 @@ object ReadCIFAR10ToNDArray {
     for (pixel <- original) yield {
       normalizePixel(pixel)
     }
-  }
-
-  /**
-    * 随机获取count个train数据
-    *
-    * @return
-    */
-  @deprecated
-  def getSGDTrainNDArray(count: Int): INDArray :: INDArray :: HNil = {
-    //生成0到4的随机数
-    val randomIndex = random.nextInt(5)
-    val labelBytes = labelBytesArray(randomIndex)
-    val pixelBytes = pixelBytesArray(randomIndex)
-
-    if (count > 10000)
-      throw new RuntimeException("your mini-batch size is too big")
-    val indexArray = randomArray(10000, count)
-
-    val labels: Seq[Int] =
-      for (index <- 0 until count) yield {
-        labelBytes(indexArray(index))
-      }
-
-    val pixels: Seq[Seq[Double]] =
-      for (index <- 0 until count) yield {
-        pixelBytes(indexArray(index)).toList
-      }
-
-    val labelsNDArray = labels.toNDArray.reshape(count, 1)
-    val pixelsNDArray = pixels.toNDArray
-
-    pixelsNDArray :: labelsNDArray :: HNil
-  }
-
-  /**
-    * 从固定范围内获取count个数字组成的集合
-    *
-    * @param arrange 范围
-    * @param count   个数
-    * @return
-    */
-  @deprecated
-  def randomArray(arrange: Int, count: Int): Array[Int] = {
-    random
-      .shuffle[Int, IndexedSeq](0 until arrange) //https://issues.scala-lang.org/browse/SI-6948
-      .take(count)
-      .toArray
   }
 
   /**
