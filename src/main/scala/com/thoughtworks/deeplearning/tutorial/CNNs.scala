@@ -49,7 +49,7 @@ object CNNs extends App {
 
       new LearningRate with L2Regularization with Adam { //NesterovMomentum
 
-        var learningRate = 0.00003
+        var learningRate = 0.0005
 
         override protected def l2Regularization: Double = 0.00003
 
