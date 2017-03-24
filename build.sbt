@@ -4,7 +4,7 @@ version := "1.0"
 
 scalaVersion in Global := "2.11.8"
 
-val deepLearningScalaVersion = "1.0.0-RC7"
+val deepLearningScalaVersion = "1.0.0-RC8"
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % deepLearningScalaVersion
 
@@ -23,6 +23,10 @@ libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablecoprodu
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarray" % deepLearningScalaVersion
 
 libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.1"
+
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
+
+libraryDependencies += "org.nd4j" % "nd4j-cuda-8.0-platform" % "0.8.0"
 
 libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0"
 
