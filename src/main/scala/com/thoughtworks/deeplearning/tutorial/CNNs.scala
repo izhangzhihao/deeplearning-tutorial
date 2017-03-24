@@ -19,7 +19,6 @@ import com.thoughtworks.deeplearning.Poly.MathFunctions._
 import com.thoughtworks.deeplearning.Poly.MathMethods.{*, /}
 import com.thoughtworks.deeplearning.Poly.MathOps
 import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.factory.Nd4j.PadMode
 import org.nd4j.linalg.factory.Nd4j.PadMode.EDGE
