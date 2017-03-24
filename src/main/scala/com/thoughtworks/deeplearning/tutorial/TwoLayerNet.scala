@@ -14,7 +14,7 @@ import com.thoughtworks.deeplearning.{
   Layer,
   Symbolic
 }
-import com.thoughtworks.deeplearning.Layer.Batch
+import com.thoughtworks.deeplearning.Layer.Tape
 import com.thoughtworks.deeplearning.Symbolic.Layers.Identity
 import com.thoughtworks.deeplearning.Symbolic._
 import com.thoughtworks.deeplearning.Poly.MathFunctions._
