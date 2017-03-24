@@ -90,6 +90,8 @@ object CNNs extends App {
 
   val Depth = List.fill(17)(3)
 
+  val PoolSize = (2, 2)
+
   val InputSize = 32 // W 输入数据尺寸
 
   val KernelNumber = List.fill(17)(3) //卷积核的数量
@@ -98,7 +100,7 @@ object CNNs extends App {
 
   val Padding = 1 //零填充数量
 
-  val KernelSize = 3 //F 卷积核的空间尺寸
+  val KernelSize = 3 //卷积核的空间尺寸
 
   val reshapedTestData =
     testData.reshape(NumberOfTestSize, 3, InputSize, InputSize)
@@ -119,6 +121,11 @@ object CNNs extends App {
     val convResult =
       conv2d(input, weight, bias, (3, 3), (1, 1), (1, 1))
     max(convResult, 0.0)
+  }
+
+  def maxpool(poolSize: (Int, Int))(
+      implicit input: INDArray @Symbolic): INDArray @Symbolic = {
+    input.maxPool(poolSize)
   }
 
   def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
@@ -149,18 +156,20 @@ object CNNs extends App {
         convFunction(
           timesToRun - 1,
           timesNow + 1,
-          convolutionThenRelu(Depth(timesNow * 2 + 1),
-                              KernelNumber(timesNow * 2 + 1)).compose(
-            convolutionThenRelu(Depth(timesNow * 2),
-                                KernelNumber(timesNow * 2)).compose(input2)
+          maxpool(PoolSize).compose(
+            convolutionThenRelu(Depth(timesNow * 2 + 1),
+                                KernelNumber(timesNow * 2 + 1)).compose(
+              convolutionThenRelu(Depth(timesNow * 2),
+                                  KernelNumber(timesNow * 2)).compose(input2)
+            )
           )
         )
       }
     }
 
-    val recLayer = convFunction(8, 0, input)
+    val recLayer = convFunction(3, 0, input)
 
-    fullyConnectedThenSoftmax(32 * 32 * 3, 10).compose(recLayer)
+    fullyConnectedThenSoftmax(4 * 4 * 3, 10).compose(recLayer)
   }
 
   val predictor = hiddenLayer
@@ -236,8 +245,7 @@ object CNNs extends App {
 
   val endTime = LocalTime.now()
 
-  println(
-    "start at :" + startTime + "; end at :" + endTime)
+  println("start at :" + startTime + "; end at :" + endTime)
 
   val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
     resultTuple.unzip3
