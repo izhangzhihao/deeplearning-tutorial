@@ -121,13 +121,6 @@ object CNNs extends App {
     max(convResult, 0.0)
   }
 
-  //  def maxPool(implicit input: INDArray @Symbolic): INDArray @Symbolic = {
-  //    input
-  //      .im2col(Array(2, 2), Array(2, 2), Array(0, 0))
-  //      .permute(0, 1, 4, 5, 2, 3)
-  //      .maxPool(4, 5)
-  //  }
-
   def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores = exp(scores)
     expScores / expScores.sum(1)
@@ -244,16 +237,7 @@ object CNNs extends App {
   val endTime = LocalTime.now()
 
   println(
-    "start at :" + startTime.toString() + "; end at :" + endTime.toString())
-
-//  val resultTuple: Seq[(Double, Double, Double)] =
-//    for (indexer <- 0 until 1000) yield {
-//      if (indexer % 100 == 0 && indexer != 0) {
-//        isUpdateLearningRate = true
-//        println("setting isUpdateLearningRate to : " + isUpdateLearningRate)
-//      }
-//      trainData(Array(1))
-//    }
+    "start at :" + startTime + "; end at :" + endTime)
 
   val (trainLossSeq, trainAccuracySeq, testAccuracySeq) =
     resultTuple.unzip3

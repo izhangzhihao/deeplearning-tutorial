@@ -97,10 +97,10 @@ object ReadCIFAR10ToNDArray {
   def downloadDataAndUnzipIfNotExist(url: String,
                                      path: String,
                                      fileName: String): Unit = {
-    println("downloading data...")
+    println("downloading CIFAR10 database...")
     val result = new URL(url) #> new File(path + fileName) !!
 
-    println("unzip file...")
+    println("unzip CIFAR10 database...")
     val archiver: Archiver = ArchiverFactory.createArchiver("tar", "gz")
     archiver.extract(new File(path + fileName), new File(path))
     println("download and unzip done.")
