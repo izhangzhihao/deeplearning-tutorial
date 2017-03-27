@@ -4,7 +4,7 @@ version := "1.0"
 
 scalaVersion in Global := "2.11.8"
 
-val deepLearningScalaVersion = "1.0.0-RC9"
+val deepLearningScalaVersion = "1.0.0-RC8"
 
 libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % deepLearningScalaVersion
 
