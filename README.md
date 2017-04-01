@@ -4,6 +4,8 @@
 
 With the help of DeepLearning.scala, regular programmers are able to build complex neural networks from simple code. You  write code almost as usual, the only difference being that code based on DeepLearning.scala is [differentiable](https://colah.github.io/posts/2015-09-NN-Types-FP/), which enables such code to evolve by modifying its parameters continuously.
 
+<img src="https://github.com/izhangzhihao/deeplearning-tutorial/blob/master/cover.jpeg" width="360">
+
 ## NOTE: Please do NOT download this repo,because if you download this repo ,you will find the notebooks dir is empty. So ,please use git clone ,after that , use `git submodule init` & `git submodule update` to clone the notebooks(git submodule).
 
 ### [Jupyter notebook installation](https://github.com/alexarchambault/jupyter-scala)
