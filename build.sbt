@@ -2,7 +2,7 @@ name := "deeplearning-tutorial"
 
 version := "1.0"
 
-scalaVersion in Global := "2.11.8"
+scalaVersion in Global := "2.11.9"
 
 val deepLearningScalaVersion = "1.0.0"
 
