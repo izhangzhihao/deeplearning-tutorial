@@ -46,14 +46,14 @@ object Debug extends App {
       "/cifar-10-batches-bin/test_batch.bin",
       100)
 
-  private val train_data = trainNDArray.head
-  private val test_data = testNDArray.head
+  private val trainData = trainNDArray.head
+  private val testData = testNDArray.head
 
-  val train_expect_result = trainNDArray.tail.head
-  val test_expect_result = testNDArray.tail.head
+  val trainExpectResult = trainNDArray.tail.head
+  val testExpectResult = testNDArray.tail.head
 
-  val p = Utils.makeVectorized(train_expect_result, NumberOfClasses)
-  val test_p = Utils.makeVectorized(test_expect_result, NumberOfClasses)
+  val trainVectorized = Utils.makeVectorized(trainExpectResult, NumberOfClasses)
+  val testVectorized = Utils.makeVectorized(testExpectResult, NumberOfClasses)
 
   def softmax(implicit scores: INDArray @Symbolic): INDArray @Symbolic = {
     val expScores: INDArray @Symbolic = exp(scores)
@@ -87,14 +87,14 @@ object Debug extends App {
   }
 
   for (_ <- 0 until 2000) {
-    val loss = lossFunction.train(train_data :: p :: HNil)
+    val loss = lossFunction.train(trainData :: trainVectorized :: HNil)
     println(s"loss : $loss")
   }
 
-  private val result = myNeuralNetwork.predict(test_data)
+  private val result = myNeuralNetwork.predict(testData)
   println(s"result: $result") //输出判断结果
 
-  val right = Utils.getAccuracy(result, test_expect_result)
+  val right = Utils.getAccuracy(result, testExpectResult)
   println(s"the result is $right %")
 
 }
