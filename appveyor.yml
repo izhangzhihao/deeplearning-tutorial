@@ -7,7 +7,7 @@ environment:
     IT_TEST_SUITE: "it:testOnly -- -l NoWindows"
   matrix:
     # - SCALA_VERSION: 2.10.6
-    - SCALA_VERSION: 2.11.9
+    - SCALA_VERSION: 2.11.10
     # - SCALA_VERSION: 2.12.1
 install:
   - ps: |
