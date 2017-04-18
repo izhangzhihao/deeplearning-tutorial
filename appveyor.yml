@@ -7,8 +7,8 @@ environment:
     IT_TEST_SUITE: "it:testOnly -- -l NoWindows"
   matrix:
     # - SCALA_VERSION: 2.10.6
-    - SCALA_VERSION: 2.11.10
-    # - SCALA_VERSION: 2.12.1
+    - SCALA_VERSION: 2.11.11
+    # - SCALA_VERSION: 2.12.2
 install:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem

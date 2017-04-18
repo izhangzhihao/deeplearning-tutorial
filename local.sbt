@@ -1,1 +1,1 @@
-scalaVersion in Global := "2.11.10"
+scalaVersion in Global := "2.11.11"
