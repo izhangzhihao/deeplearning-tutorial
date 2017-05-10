@@ -5,8 +5,6 @@ import java.net.URL
 import java.util.zip.GZIPInputStream
 
 import sys.process._
-import com.thoughtworks.deeplearning.DifferentiableHList._
-import com.thoughtworks.deeplearning.DifferentiableINDArray._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._

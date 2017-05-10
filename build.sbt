@@ -1,37 +1,30 @@
 name := "deeplearning-tutorial"
 
-version := "1.0"
+version := "2.0"
 
 scalaVersion in Global := "2.11.11"
 
-val deepLearningScalaVersion = "1.0.0"
+val deepLearningScalaVersion = "2.0.0-SNAPSHOT"
 
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableany" % deepLearningScalaVersion
+libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiable" % deepLearningScalaVersion
 
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablenothing" % deepLearningScalaVersion
+libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.2"
 
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableseq" % deepLearningScalaVersion
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.7.2"
 
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiabledouble" % deepLearningScalaVersion
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablefloat" % deepLearningScalaVersion
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablehlist" % deepLearningScalaVersion
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiablecoproduct" % deepLearningScalaVersion
-
-libraryDependencies += "com.thoughtworks.deeplearning" %% "differentiableindarray" % deepLearningScalaVersion
-
-libraryDependencies += "org.plotly-scala" %% "plotly-render" % "0.3.1"
-
-libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
-
-libraryDependencies += "org.nd4j" % "nd4j-cuda-8.0-platform" % "0.8.0"
+libraryDependencies += "org.nd4j" % "nd4j-cuda-8.0-platform" % "0.7.2"
 
 libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0"
 
-addCompilerPlugin(
-  "com.thoughtworks.implicit-dependent-type" %% "implicit-dependent-type" % "latest.release")
+libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
+
+libraryDependencies += "org.slf4j" % "jul-to-slf4j" % "1.7.25"
+
+libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.25"
+
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.2"
+
+libraryDependencies += "ch.qos.logback" % "logback-core" % "1.2.2"
 
 addCompilerPlugin(
   "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
