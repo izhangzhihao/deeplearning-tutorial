@@ -9,8 +9,7 @@ import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.deeplearning.differentiable.Double._
 import com.thoughtworks.deeplearning.differentiable.Double.implicits._
-import com.thoughtworks.deeplearning.Tape
-import com.thoughtworks.raii.ownership.Borrowing
+import com.thoughtworks.deeplearning.{Tape, differentiable}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -34,14 +33,12 @@ object GettingStarted extends App {
 
   val weight = (Nd4j.randn(3, 1) / scala.math.sqrt(3.0)).toWeight
 
-  def myNeuralNetwork(
-      input: INDArray): Do[Borrowing[Tape.Aux[INDArray, INDArray]]] = {
+  def myNeuralNetwork(input: INDArray): differentiable.INDArray = {
     dot(input, weight)
   }
 
-  def lossFunction(
-      input: INDArray,
-      expectOutput: INDArray): Do[Borrowing[Tape.Aux[Double, Double]]] = {
+  def lossFunction(input: INDArray,
+                   expectOutput: INDArray): differentiable.Double = {
     sumT(abs(myNeuralNetwork(input) - expectOutput))
   }
 
