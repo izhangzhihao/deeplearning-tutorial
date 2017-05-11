@@ -2,8 +2,10 @@ package com.github.izhangzhihao
 
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any._
-import com.thoughtworks.deeplearning.differentiable.INDArray.Optimizer
-import com.thoughtworks.deeplearning.differentiable.INDArray.Optimizer.LearningRate
+import com.thoughtworks.deeplearning.differentiable.INDArray.{
+  Optimizer => INDArrayOptimizer
+}
+import INDArrayOptimizer.LearningRate
 import com.thoughtworks.deeplearning.differentiable.INDArray.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous.Do
@@ -27,7 +29,7 @@ import plotly.Plotly._
 
 object GettingStarted extends App {
 
-  implicit def optimizer: Optimizer = new LearningRate {
+  implicit def optimizer: INDArrayOptimizer = new LearningRate {
     def currentLearningRate() = 0.001
   }
 
@@ -42,10 +44,6 @@ object GettingStarted extends App {
     sumT(abs(myNeuralNetwork(input) - expectOutput))
   }
 
-  def trainMyNetwork(input: INDArray, expectedOutput: INDArray): Task[Double] = {
-    train(lossFunction(input, expectedOutput))
-  }
-
   val input: INDArray =
     Array(Array(0, 1, 2), Array(3, 6, 9), Array(13, 15, 17)).toNDArray
 
@@ -55,7 +53,7 @@ object GettingStarted extends App {
   val trainTask: Task[Unit] = {
 
     val lossSeq = for (_ <- (1 to 400).toVector) yield {
-      trainMyNetwork(input, expectedOutput).each
+      train(lossFunction(input, expectedOutput)).each
     }
 
     polyLoss(lossSeq)
