@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.tutorial
+package com.github.izhangzhihao
 
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any._

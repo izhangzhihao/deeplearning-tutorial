@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.tutorial
+package com.github.izhangzhihao
 
 import java.awt.Color
 import java.awt.image.BufferedImage

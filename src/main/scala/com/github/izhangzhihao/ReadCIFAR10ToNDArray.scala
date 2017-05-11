@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning.tutorial
+package com.github.izhangzhihao
 
 import java.io._
 import java.net.URL
