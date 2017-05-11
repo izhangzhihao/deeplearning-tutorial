@@ -6,17 +6,18 @@ environment:
     TEST_SUITE: test
     IT_TEST_SUITE: "it:testOnly -- -l NoWindows"
   matrix:
+    # - SCALA_VERSION: 2.10.6
     - SCALA_VERSION: 2.11.11
     # - SCALA_VERSION: 2.12.2
 install:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
-      if (!(Test-Path -Path "C:\sbt\sbt-launcher-packaging-0.13.15" )) {
+      if (!(Test-Path -Path "C:\sbt\sbt-launcher-packaging-0.13.13" )) {
         (new-object System.Net.WebClient).DownloadFile(
-          'https://dl.bintray.com/sbt/native-packages/sbt/0.13.15/sbt-0.13.15.zip',
-          'C:\sbt-0.13.15.zip'
+          'https://dl.bintray.com/sbt/native-packages/sbt/0.13.13/sbt-0.13.13.zip',
+          'C:\sbt-0.13.13.zip'
         )
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\sbt-0.13.15.zip", "C:\sbt")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\sbt-0.13.13.zip", "C:\sbt")
       }
   - ps: |
       if (!(Test-Path -Path "C:\Program Files\Java\jdk1.8.0\src.zip")) {
@@ -26,7 +27,7 @@ install:
         )
       }
   - cmd: SET JAVA_HOME=C:\Program Files\Java\jdk1.8.0
-  - cmd: SET PATH=C:\sbt\sbt-launcher-packaging-0.13.15\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET PATH=C:\sbt\sbt-launcher-packaging-0.13.13\bin;%JAVA_HOME%\bin;%PATH%
   - cmd: SET COURSIER_VERBOSITY=-1
   - cmd: SET SBT_OPTS=-Xss2m -Xms1024m -Xmx4096m -XX:+TieredCompilation -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:MaxPermSize=256m -XX:ReservedCodeCacheSize=256M
   - cmd: SET SCALATEST_SPAN_SCALE_FACTOR=20
@@ -40,7 +41,7 @@ build_script:
   # - sbt ";+++ %SCALA_VERSION% %TEST_SUITE% ;+++ %SCALA_VERSION% %IT_TEST_SUITE%"
 cache:
   - C:\Program Files\Java\jdk1.8.0\src.zip
-  - C:\sbt\sbt-launcher-packaging-0.13.15
+  - C:\sbt\sbt-launcher-packaging-0.13.13
   - C:\Users\appveyor\.ivy2 -> appveyor.yml
   - C:\Users\appveyor\.coursier -> appveyor.yml
 on_finish:
