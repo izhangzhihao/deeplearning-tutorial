@@ -16,8 +16,6 @@ libraryDependencies += "org.nd4j" % "nd4j-cuda-8.0-platform" % "0.7.2"
 
 libraryDependencies += "org.rauschig" % "jarchivelib" % "0.5.0"
 
-libraryDependencies += "com.thoughtworks.each" %% "each" % "3.3.1"
-
 libraryDependencies += "org.slf4j" % "jul-to-slf4j" % "1.7.25"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.25"
