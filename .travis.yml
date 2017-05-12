@@ -26,3 +26,5 @@ cache:
 
 script:
   - sbt compile
+  - sbt "runMain com.github.izhangzhihao.GettingStarted"
+  - sbt "runMain com.github.izhangzhihao.SoftmaxLinearClassifier"
