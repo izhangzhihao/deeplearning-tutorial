@@ -2,18 +2,20 @@ package com.github.izhangzhihao
 
 import com.thoughtworks.deeplearning.math._
 import com.thoughtworks.deeplearning.differentiable.Any._
-import com.thoughtworks.deeplearning.differentiable.INDArray.{
-  Optimizer => INDArrayOptimizer,
-  Weight => INDArrayWeight
-}
+import com.thoughtworks.deeplearning.differentiable.INDArray.{Optimizer => INDArrayOptimizer, Weight => INDArrayWeight}
 import INDArrayOptimizer.{L2Regularization, LearningRate}
 import com.github.izhangzhihao.GettingStarted.polyLoss
+import com.github.izhangzhihao.SoftmaxLinearClassifier.{softmax, weight}
+import com.thoughtworks.deeplearning.Lift
+import com.thoughtworks.deeplearning.Tape.Aux
 import com.thoughtworks.deeplearning.differentiable.INDArray.implicits._
 import com.thoughtworks.each.Monadic._
+import com.thoughtworks.raii.asynchronous
 import com.thoughtworks.raii.asynchronous.Do
+import com.thoughtworks.raii.ownership.Borrowing
+import org.nd4j.linalg.api.ndarray.INDArray
 //import com.thoughtworks.deeplearning.differentiable.Double._
 import com.thoughtworks.deeplearning.differentiable.Double.implicits._
-import com.thoughtworks.deeplearning.differentiable.INDArray
 import com.thoughtworks.deeplearning.{Tape, differentiable}
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -38,7 +40,6 @@ import scala.util.Random
 object TwoLayerNet extends App {
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
-  val NumberOfPixels: Int = 3072
 
   //加载测试数据，我们读取100条作为测试数据
   val testNDArray =
@@ -78,4 +79,89 @@ object TwoLayerNet extends App {
     val b = Nd4j.zeros(outputSize).toWeight
     max(dot(input, weight) + b, 0.0)
   }
+
+  def softmax(scores: differentiable.INDArray): differentiable.INDArray = {
+    val expScores = exp(scores)
+    expScores / sum(expScores, 1)
+  }
+
+  def fullyConnectedThenSoftmax(
+      inputSize: Int,
+      outputSize: Int,
+      input: differentiable.INDArray): differentiable.INDArray = {
+    val weight =
+      (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
+    val b = Nd4j.zeros(outputSize).toWeight
+    softmax(dot(input, weight) + b)
+  }
+
+  val NumberOfPixels: Int = 3072
+
+  def myNeuralNetwork(
+      input: differentiable.INDArray): differentiable.INDArray = {
+
+    val layer0 = fullyConnectedThenRelu(NumberOfPixels, 500, input)
+
+    fullyConnectedThenSoftmax(500, 10, layer0)
+  }
+
+  def crossEntropy(score: differentiable.INDArray,
+                   label: differentiable.INDArray): differentiable.Double = {
+    -mean(
+      label * log(score * 0.9 + 0.1) + (1.0 - label) * log(1.0 - score * 0.9))
+  }
+
+  def lossFunction(input: INDArray,
+                   expectOutput: INDArray)(implicit liftINDArray: Lift.Aux[INDArray, INDArray, INDArray]): differentiable.Double = {
+
+    val score
+      : differentiable.INDArray = myNeuralNetwork(1.0 * input) // TODO
+    crossEntropy(score, 1.0 * expectOutput) //TODO
+  }
+
+  @monadic[Task]
+  val trainTask: Task[Unit] = {
+    val random = new Random
+
+    val MiniBatchSize = 256
+
+    val lossSeq =
+      (
+        for (_ <- (0 to 50).toVector) yield {
+          val randomIndex = random
+            .shuffle[Int, IndexedSeq](0 until 10000) //https://issues.scala-lang.org/browse/SI-6948
+            .toArray
+          for (times <- (0 until 10000 / MiniBatchSize).toVector) yield {
+            val randomIndexArray =
+              randomIndex.slice(times * MiniBatchSize,
+                                (times + 1) * MiniBatchSize)
+            val trainNDArray :: expectLabel :: shapeless.HNil =
+              ReadCIFAR10ToNDArray.getSGDTrainNDArray(randomIndexArray)
+            val input =
+              trainNDArray.reshape(MiniBatchSize, 3072)
+
+            val expectLabelVectorized =
+              Utils.makeVectorized(expectLabel, NumberOfClasses)
+            val loss = train(lossFunction(input, expectLabelVectorized)).each
+            println(loss)
+            loss
+          }
+        }
+      ).flatten
+
+    polyLoss(lossSeq)
+  }
+
+  val predictResult = throwableMonadic[Task] {
+    trainTask.each
+
+    predict(myNeuralNetwork(1.0 * testData)).each //TODO
+  }
+
+  predictResult.unsafePerformSyncAttempt match {
+    case -\/(e) => throw e
+    case \/-(result) =>
+      println(Utils.getAccuracy(result, testExpectResult))
+  }
+
 }
