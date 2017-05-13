@@ -113,7 +113,8 @@ object MiniBatchGradientDescent extends App {
   predictResult.unsafePerformSyncAttempt match {
     case -\/(e) => throw e
     case \/-(result) =>
-      println(Utils.getAccuracy(result, testExpectResult))
+      println(
+        "The accuracy is " + Utils.getAccuracy(result, testExpectResult) + "%")
   }
 
 }

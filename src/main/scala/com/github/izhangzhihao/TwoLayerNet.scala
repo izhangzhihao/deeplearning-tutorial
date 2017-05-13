@@ -5,16 +5,14 @@ import com.thoughtworks.deeplearning.differentiable.Any._
 import com.thoughtworks.deeplearning.differentiable.INDArray.{Optimizer => INDArrayOptimizer, Weight => INDArrayWeight}
 import INDArrayOptimizer.{L2Regularization, LearningRate}
 import com.github.izhangzhihao.GettingStarted.polyLoss
-import com.github.izhangzhihao.SoftmaxLinearClassifier.{softmax, weight}
 import com.thoughtworks.deeplearning.Lift
-import com.thoughtworks.deeplearning.Tape.Aux
+import com.thoughtworks.deeplearning.Tape
 import com.thoughtworks.deeplearning.differentiable.INDArray.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous
 import com.thoughtworks.raii.asynchronous.Do
 import com.thoughtworks.raii.ownership.Borrowing
 import org.nd4j.linalg.api.ndarray.INDArray
-//import com.thoughtworks.deeplearning.differentiable.Double._
 import com.thoughtworks.deeplearning.differentiable.Double.implicits._
 import com.thoughtworks.deeplearning.{Tape, differentiable}
 import org.nd4j.linalg.api.ndarray.INDArray
@@ -74,6 +72,7 @@ object TwoLayerNet extends App {
   def fullyConnectedThenRelu(inputSize: Int,
                              outputSize: Int,
                              input: differentiable.INDArray) = {
+    //TODO
     val weight =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize / 2.0)).toWeight * 0.1
     val b = Nd4j.zeros(outputSize).toWeight
@@ -89,6 +88,7 @@ object TwoLayerNet extends App {
       inputSize: Int,
       outputSize: Int,
       input: differentiable.INDArray): differentiable.INDArray = {
+    //TODO
     val weight =
       (Nd4j.randn(inputSize, outputSize) / math.sqrt(outputSize)).toWeight
     val b = Nd4j.zeros(outputSize).toWeight

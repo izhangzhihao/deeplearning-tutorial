@@ -18,10 +18,7 @@ import org.nd4s.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.concurrent.Task
-//import scalaz.std.option._
 import scalaz.{-\/, \/, \/-}
-//import scalaz.syntax.all._
-//import scalaz.std.iterable._
 import scalaz.std.vector._
 
 import plotly.Scatter

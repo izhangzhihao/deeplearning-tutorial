@@ -6,14 +6,7 @@ import com.thoughtworks.deeplearning.differentiable.INDArray.{
   Optimizer => INDArrayOptimizer
 }
 import INDArrayOptimizer.LearningRate
-import com.github.izhangzhihao.GettingStarted.{
-  expectedOutput,
-  input,
-  lossFunction,
-  myNeuralNetwork,
-  polyLoss,
-  trainTask
-}
+import com.github.izhangzhihao.GettingStarted.polyLoss
 import com.thoughtworks.deeplearning.differentiable.INDArray.implicits._
 import com.thoughtworks.each.Monadic._
 import com.thoughtworks.raii.asynchronous.Do
@@ -35,6 +28,7 @@ import plotly.Plotly._
   * @author 张志豪 (izhangzhihao) &lt;izhangzhihao@hotmail.com&gt;
   */
 object SoftmaxLinearClassifier extends App {
+
   //CIFAR10中的图片共有10个分类(airplane,automobile,bird,cat,deer,dog,frog,horse,ship,truck)
   val NumberOfClasses: Int = 10
   val NumberOfPixels: Int = 3072
@@ -105,7 +99,8 @@ object SoftmaxLinearClassifier extends App {
   predictResult.unsafePerformSyncAttempt match {
     case -\/(e) => throw e
     case \/-(result) =>
-      println(Utils.getAccuracy(result, testExpectResult))
+      println(
+        "The accuracy is " + Utils.getAccuracy(result, testExpectResult) + "%")
   }
 
 }
