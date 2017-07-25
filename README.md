@@ -13,10 +13,10 @@ With the help of DeepLearning.scala, regular programmers are able to build compl
 ## Tutorial index
 
 ### 1 - Getting Start
-- [getting start](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/GettingStarted.ipynb)
-- [how to debug](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/Debug.ipynb)
-- [softmax](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/SoftmaxLinearClassifier.ipynb)
-- [mini-batch gradient descent](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/MiniBatchGradientDescent.ipynb)
-- [two layer net](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/TwoLayerNet.ipynb)
-- [CNNs](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/master/ipynbs/CNNs.ipynb)
+- [getting start](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/GettingStarted.ipynb)
+- [how to debug](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/Debug.ipynb)
+- [softmax](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/SoftmaxLinearClassifier.ipynb)
+- [mini-batch gradient descent](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/MiniBatchGradientDescent.ipynb)
+- [two layer net](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/TwoLayerNet.ipynb)
+- [CNNs](https://github.com/thoughtworksinc/deeplearning.scala-website/blob/v1.0.0-doc/ipynbs/CNNs.ipynb)
 
